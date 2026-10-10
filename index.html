@@ -1710,14 +1710,14 @@
           <div class="obstacle-header">
             <span class="obstacle-title" style="display: flex; align-items: center; gap: 6px;">
               ${isTV ? '<span style="background: #2563eb; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px;">TV</span>' : ''}
-              ${obs.name}
+              ${escHtml(obs.name)}
             </span>
             <button class="btn btn-sm btn-danger" onclick="removeObstacle(${idx})">Remove</button>
           </div>
           <div class="form-row">
             <div class="form-group" style="flex: 2;">
               <label>Obstacle Label</label>
-              <input type="text" value="${obs.name}" onchange="updateObstacleText(${idx}, 'name', this.value)">
+              <input type="text" value="${escHtml(obs.name)}" onchange="updateObstacleText(${idx}, 'name', this.value)">
             </div>
             <div class="form-group" style="flex: 1.5;">
               <label>Obstacle Type</label>
@@ -1780,9 +1780,17 @@
       });
     }
 
+    function escHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function escJsAttr(str) {
+      return escHtml(String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+    }
+
     function updateObstacleText(idx, field, val) {
       const w = getActiveWall();
       w.obstacles[idx][field] = val.trim() || 'Obstacle';
+      if (field === 'name') w.obstacles[idx].customName = true;
       renderObstaclesList();
       updateCalculation();
     }
@@ -1792,24 +1800,25 @@
       const obs = w.obstacles[idx];
       obs.type = type;
       const isMm = state.unit === 'mm';
+      const keepName = !!obs.customName;
       if (type === 'tv') {
         applyTVPreset(idx, '55_canvas');
       } else if (type === 'outlet') {
-        obs.name = 'Double Power Outlet';
+        if (!keepName) obs.name = 'Double Power Outlet';
         obs.width = isMm ? 120 : 5;
         obs.height = isMm ? 75 : 3;
       } else if (type === 'door') {
-        obs.name = 'Interior Door';
+        if (!keepName) obs.name = 'Interior Door';
         obs.width = isMm ? 820 : 32;
         obs.height = isMm ? 2040 : 80;
         obs.y = 0;
       } else if (type === 'window') {
-        obs.name = 'Window Opening';
+        if (!keepName) obs.name = 'Window Opening';
         obs.width = isMm ? 1200 : 48;
         obs.height = isMm ? 1000 : 40;
         obs.y = isMm ? 900 : 36;
       } else {
-        obs.name = 'Wall Fixture';
+        if (!keepName) obs.name = 'Wall Fixture';
       }
       renderObstaclesList();
       updateCalculation();
@@ -1822,15 +1831,15 @@
       obs.type = 'tv';
       obs.tvPreset = preset;
       if (preset === '55_canvas') {
-        obs.name = '55" CanvasTV (Hisense S7NAU)';
+        if (!obs.customName) obs.name = '55" CanvasTV (Hisense S7NAU)';
         obs.width = isMm ? 1256 : roundUnit(1256 * MM_TO_INCH, 'in');
         obs.height = isMm ? 733 : roundUnit(733 * MM_TO_INCH, 'in');
       } else if (preset === '65_canvas') {
-        obs.name = '65" CanvasTV (Hisense S7NAU)';
+        if (!obs.customName) obs.name = '65" CanvasTV (Hisense S7NAU)';
         obs.width = isMm ? 1475 : roundUnit(1475 * MM_TO_INCH, 'in');
         obs.height = isMm ? 856 : roundUnit(856 * MM_TO_INCH, 'in');
       } else if (preset === '75_canvas') {
-        obs.name = '75" 4K Display';
+        if (!obs.customName) obs.name = '75" 4K Display';
         obs.width = isMm ? 1675 : roundUnit(1675 * MM_TO_INCH, 'in');
         obs.height = isMm ? 960 : roundUnit(960 * MM_TO_INCH, 'in');
       }
@@ -2368,7 +2377,7 @@
             : `Overlaps wainscoting by ${formatLength(Math.abs(clearanceToRail))}`;
 
           markup += `
-            <g id="${obs.id}" class="obstacle-tv-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)}) &bull; ${clearanceText}')" onmouseleave="hideTooltip()">
+            <g id="${obs.id}" class="obstacle-tv-group" onmouseenter="showTooltip(evt, '${escJsAttr(obs.name)} (${formatLength(obs.width)} x ${formatLength(obs.height)}) &bull; ${clearanceText}')" onmouseleave="hideTooltip()">
               <!-- Wall mount drop shadow -->
               <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" rx="3" fill="#0f172a" opacity="0.3" filter="url(#moulding-shadow)" />
 
@@ -2406,7 +2415,7 @@
               <!-- Bottom TV Model Spec Badge -->
               <rect x="${obs.x + obs.width/2 - 120}" y="${obsSvgY + obs.height - 24}" width="240" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
               <text x="${obs.x + obs.width/2}" y="${obsSvgY + obs.height - 11}" font-size="10" font-family="system-ui, sans-serif" fill="#ffffff" text-anchor="middle" font-weight="600">
-                ${obs.name} (${formatLength(obs.width)} &times; ${formatLength(obs.height)})
+                ${escHtml(obs.name)} (${formatLength(obs.width)} &times; ${formatLength(obs.height)})
               </text>
             </g>
           `;
@@ -2431,13 +2440,13 @@
         } else if (obs.type === 'door') {
           // Doorway
           markup += `
-            <g id="${obs.id}" class="obstacle-door-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+            <g id="${obs.id}" class="obstacle-door-group" onmouseenter="showTooltip(evt, '${escJsAttr(obs.name)} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
               <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${isDark ? '#1e293b' : '#f8fafc'}" stroke="#94a3b8" stroke-width="2" />
               <!-- Casing architrave -->
               <rect x="${obs.x + 10}" y="${obsSvgY + 10}" width="${obs.width - 20}" height="${obs.height - 10}" fill="none" stroke="#cbd5e1" stroke-width="1.5" />
               <!-- Door knob -->
               <circle cx="${obs.x + obs.width - 35}" cy="${obsSvgY + obs.height/2}" r="6" fill="#d97706" />
-              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${escHtml(obs.name)}</text>
             </g>
           `;
         } else if (obs.type === 'window') {
@@ -2445,7 +2454,7 @@
           const paneW = (obs.width - 24) / 2;
           const paneH = (obs.height - 24) / 2;
           markup += `
-            <g id="${obs.id}" class="obstacle-window-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+            <g id="${obs.id}" class="obstacle-window-group" onmouseenter="showTooltip(evt, '${escJsAttr(obs.name)} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
               <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${isDark ? '#0f172a' : '#e0f2fe'}" stroke="#0284c7" stroke-width="2" rx="2" />
               <!-- 4 panes -->
               <rect x="${obs.x + 6}" y="${obsSvgY + 6}" width="${paneW}" height="${paneH}" fill="rgba(255,255,255,0.4)" stroke="#38bdf8" stroke-width="1" />
@@ -2454,18 +2463,18 @@
               <rect x="${obs.x + 18 + paneW}" y="${obsSvgY + 18 + paneH}" width="${paneW}" height="${paneH}" fill="rgba(255,255,255,0.4)" stroke="#38bdf8" stroke-width="1" />
               <!-- Window Sill -->
               <line x1="${obs.x - 10}" y1="${obsSvgY + obs.height}" x2="${obs.x + obs.width + 10}" y2="${obsSvgY + obs.height}" stroke="#0369a1" stroke-width="4" />
-              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${escHtml(obs.name)}</text>
             </g>
           `;
         } else {
           // Power Outlet or other fixture
           markup += `
-            <g id="${obs.id}" class="obstacle-svg-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+            <g id="${obs.id}" class="obstacle-svg-group" onmouseenter="showTooltip(evt, '${escJsAttr(obs.name)} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
               <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${obsFill}" stroke="${obsStroke}" stroke-width="2" stroke-dasharray="4,2" rx="3" />
               <!-- Receptacle holes detail -->
               <circle cx="${obs.x + obs.width * 0.35}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
               <circle cx="${obs.x + obs.width * 0.65}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
-              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${escHtml(obs.name)}</text>
             </g>
           `;
         }
