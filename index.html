@@ -1047,7 +1047,10 @@
       <div class="sidebar-section">
         <div class="section-header">
           <span>Openings &amp; Obstacles</span>
-          <button class="btn btn-sm" onclick="addObstacle()">+ Add Obstacle</button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-sm btn-primary" onclick="addTVObstacle()" title="Add 55&quot; CanvasTV obstacle" style="background: #2563eb; color: #ffffff; border: none; font-weight: 600;">+ TV</button>
+            <button class="btn btn-sm" onclick="addObstacle()" title="Add Outlet, Switch, Door, or Window">+ Opening/Outlet</button>
+          </div>
         </div>
         <div class="section-body" id="obstacles-container">
           <!-- Dynamic obstacle cards rendered here -->
@@ -1692,18 +1695,66 @@
       const w = getActiveWall();
 
       if (w.obstacles.length === 0) {
-        container.innerHTML = '<div style="font-size: 12px; color: var(--text-dim);">No obstacles added.</div>';
+        container.innerHTML = '<div style="font-size: 12px; color: var(--text-dim);">No obstacles added. Click <strong>+ TV</strong> or <strong>+ Opening/Outlet</strong> above.</div>';
         return;
       }
 
       w.obstacles.forEach((obs, idx) => {
         const item = document.createElement('div');
         item.className = 'obstacle-item';
+        const isTV = obs.type === 'tv';
+        const isMm = state.unit === 'mm';
+        const clearanceToRail = obs.y - w.wainscotHeight;
+
         item.innerHTML = `
           <div class="obstacle-header">
-            <span class="obstacle-title">${obs.name}</span>
+            <span class="obstacle-title" style="display: flex; align-items: center; gap: 6px;">
+              ${isTV ? '<span style="background: #2563eb; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px;">TV</span>' : ''}
+              ${obs.name}
+            </span>
             <button class="btn btn-sm btn-danger" onclick="removeObstacle(${idx})">Remove</button>
           </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label>Obstacle Label</label>
+              <input type="text" value="${obs.name}" onchange="updateObstacleText(${idx}, 'name', this.value)">
+            </div>
+            <div class="form-group" style="flex: 1.5;">
+              <label>Obstacle Type</label>
+              <select onchange="updateObstacleType(${idx}, this.value)">
+                <option value="tv" ${obs.type === 'tv' ? 'selected' : ''}>TV / CanvasTV</option>
+                <option value="outlet" ${obs.type === 'outlet' ? 'selected' : ''}>Power Outlet / Switch</option>
+                <option value="door" ${obs.type === 'door' ? 'selected' : ''}>Door Opening</option>
+                <option value="window" ${obs.type === 'window' ? 'selected' : ''}>Window Opening</option>
+                <option value="fixture" ${obs.type === 'fixture' ? 'selected' : ''}>Other Fixture</option>
+              </select>
+            </div>
+          </div>
+
+          ${isTV ? `
+            <div class="form-row" style="margin-bottom: 8px;">
+              <div class="form-group" style="flex: 1;">
+                <label>CanvasTV / Display Model Preset</label>
+                <select onchange="applyTVPreset(${idx}, this.value)">
+                  <option value="55_canvas" ${obs.tvPreset === '55_canvas' || !obs.tvPreset ? 'selected' : ''}>55" Hisense CanvasTV (1256 &times; 733 mm)</option>
+                  <option value="65_canvas" ${obs.tvPreset === '65_canvas' ? 'selected' : ''}>65" Hisense CanvasTV (1475 &times; 856 mm)</option>
+                  <option value="75_canvas" ${obs.tvPreset === '75_canvas' ? 'selected' : ''}>75" 4K Display (1675 &times; 960 mm)</option>
+                  <option value="custom" ${obs.tvPreset === 'custom' ? 'selected' : ''}>Custom TV Dimensions</option>
+                </select>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+              <button class="btn btn-sm" onclick="centerObstacleX(${idx})" title="Center TV horizontally on wall">Center on Wall</button>
+              <button class="btn btn-sm" onclick="alignTVAboveWainscot(${idx})" title="Mount TV with 100mm gap above wainscoting chair rail">Mount Above Rail</button>
+            </div>
+            <div style="font-size: 11px; margin-bottom: 8px; padding: 5px 8px; border-radius: 4px; background: var(--bg-card); border: 1px solid var(--border-color); line-height: 1.4;">
+              ${clearanceToRail >= 0 
+                ? `<span style="color: #059669; font-weight: 600;">Clearance above rail: ${formatLength(clearanceToRail)}</span> &bull; Center: <strong>${formatLength(obs.y + obs.height/2)}</strong> from floor`
+                : `<span style="color: #dc2626; font-weight: 600;">Overlaps wainscoting by ${formatLength(Math.abs(clearanceToRail))}!</span>`
+              }
+            </div>
+          ` : ''}
+
           <div class="form-row">
             <div class="form-group">
               <label>X (from Left) <span class="label-hint">(${state.unit})</span></label>
@@ -1727,6 +1778,103 @@
         `;
         container.appendChild(item);
       });
+    }
+
+    function updateObstacleText(idx, field, val) {
+      const w = getActiveWall();
+      w.obstacles[idx][field] = val.trim() || 'Obstacle';
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function updateObstacleType(idx, type) {
+      const w = getActiveWall();
+      const obs = w.obstacles[idx];
+      obs.type = type;
+      const isMm = state.unit === 'mm';
+      if (type === 'tv') {
+        applyTVPreset(idx, '55_canvas');
+      } else if (type === 'outlet') {
+        obs.name = 'Double Power Outlet';
+        obs.width = isMm ? 120 : 5;
+        obs.height = isMm ? 75 : 3;
+      } else if (type === 'door') {
+        obs.name = 'Interior Door';
+        obs.width = isMm ? 820 : 32;
+        obs.height = isMm ? 2040 : 80;
+        obs.y = 0;
+      } else if (type === 'window') {
+        obs.name = 'Window Opening';
+        obs.width = isMm ? 1200 : 48;
+        obs.height = isMm ? 1000 : 40;
+        obs.y = isMm ? 900 : 36;
+      } else {
+        obs.name = 'Wall Fixture';
+      }
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function applyTVPreset(idx, preset) {
+      const w = getActiveWall();
+      const obs = w.obstacles[idx];
+      const isMm = state.unit === 'mm';
+      obs.type = 'tv';
+      obs.tvPreset = preset;
+      if (preset === '55_canvas') {
+        obs.name = '55" CanvasTV (Hisense S7NAU)';
+        obs.width = isMm ? 1256 : roundUnit(1256 * MM_TO_INCH, 'in');
+        obs.height = isMm ? 733 : roundUnit(733 * MM_TO_INCH, 'in');
+      } else if (preset === '65_canvas') {
+        obs.name = '65" CanvasTV (Hisense S7NAU)';
+        obs.width = isMm ? 1475 : roundUnit(1475 * MM_TO_INCH, 'in');
+        obs.height = isMm ? 856 : roundUnit(856 * MM_TO_INCH, 'in');
+      } else if (preset === '75_canvas') {
+        obs.name = '75" 4K Display';
+        obs.width = isMm ? 1675 : roundUnit(1675 * MM_TO_INCH, 'in');
+        obs.height = isMm ? 960 : roundUnit(960 * MM_TO_INCH, 'in');
+      }
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function centerObstacleX(idx) {
+      const w = getActiveWall();
+      const obs = w.obstacles[idx];
+      obs.x = Math.max(0, Math.round((w.wallLength - obs.width) / 2));
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function alignTVAboveWainscot(idx) {
+      const w = getActiveWall();
+      const obs = w.obstacles[idx];
+      const gap = state.unit === 'mm' ? 100 : 4;
+      obs.y = Math.round(w.wainscotHeight + gap);
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function addTVObstacle() {
+      const w = getActiveWall();
+      const isMm = state.unit === 'mm';
+      const tvWidth = isMm ? 1256 : roundUnit(1256 * MM_TO_INCH, 'in');
+      const tvHeight = isMm ? 733 : roundUnit(733 * MM_TO_INCH, 'in');
+      const centerX = Math.max(0, Math.round((w.wallLength - tvWidth) / 2));
+      const mountY = Math.round(w.wainscotHeight + (isMm ? 100 : 4));
+
+      w.obstacles.push({
+        id: 'tv-' + Date.now(),
+        name: '55" CanvasTV (Hisense S7NAU)',
+        type: 'tv',
+        tvPreset: '55_canvas',
+        x: centerX,
+        y: mountY,
+        width: tvWidth,
+        height: tvHeight
+      });
+      renderObstaclesList();
+      updateCalculation();
     }
 
     function addObstacle() {
@@ -1921,6 +2069,18 @@
       // Check Obstacle Collisions
       const conflicts = [];
       w.obstacles.forEach(obs => {
+        // Check if TV hangs down into chair rail
+        if (obs.type === 'tv') {
+          const obsBottom = obs.y;
+          const obsTop = obs.y + obs.height;
+          if (obsBottom < wainscotH && obsTop > (wainscotH - railH)) {
+            conflicts.push({
+              obstacle: obs.name,
+              item: `Chair Rail Cap at ${formatLength(wainscotH)}`
+            });
+          }
+        }
+
         // In Board & Batten, check if obstacle hits battens
         if (isBoardAndBatten) {
           for (let b = 0; b <= numPanels; b++) {
@@ -2187,22 +2347,128 @@
         });
       }
 
-      // Render Obstacles (Doors, Windows, Outlets)
+      // Render Obstacles (TVs, Doors, Windows, Outlets)
       w.obstacles.forEach(obs => {
         const obsSvgY = geo.wallHeight - (obs.y + obs.height);
         const obsFill = isDark ? '#334155' : '#ffffff';
         const obsStroke = isDark ? '#f59e0b' : '#d97706';
         const obsText = isDark ? '#f59e0b' : '#b45309';
         const obsHole = isDark ? '#64748b' : '#94a3b8';
-        markup += `
-          <g id="${obs.id}" class="obstacle-svg-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
-            <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${obsFill}" stroke="${obsStroke}" stroke-width="2" stroke-dasharray="4,2" rx="3" />
-            <!-- Receptacle holes detail -->
-            <circle cx="${obs.x + obs.width * 0.35}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
-            <circle cx="${obs.x + obs.width * 0.65}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
-            <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
-          </g>
-        `;
+
+        if (obs.type === 'tv') {
+          // CanvasTV / Art Frame TV Rendering
+          const bezelW = 14; // Art frame bezel width
+          const screenX = obs.x + bezelW;
+          const screenY = obsSvgY + bezelW;
+          const screenW = Math.max(20, obs.width - (bezelW * 2));
+          const screenH = Math.max(20, obs.height - (bezelW * 2));
+          const clearanceToRail = obs.y - geo.wainscotHeight;
+          const clearanceText = clearanceToRail >= 0 
+            ? `Clearance above rail: ${formatLength(clearanceToRail)}` 
+            : `Overlaps wainscoting by ${formatLength(Math.abs(clearanceToRail))}`;
+
+          markup += `
+            <g id="${obs.id}" class="obstacle-tv-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)}) &bull; ${clearanceText}')" onmouseleave="hideTooltip()">
+              <!-- Wall mount drop shadow -->
+              <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" rx="3" fill="#0f172a" opacity="0.3" filter="url(#moulding-shadow)" />
+
+              <!-- Outer Frame Bezel (Natural Teak Woodgrain Bezel matching CanvasTV) -->
+              <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" rx="4" fill="#b08968" stroke="#7f5539" stroke-width="2" />
+              <!-- 45-degree miter corner joint lines -->
+              <line x1="${obs.x}" y1="${obsSvgY}" x2="${screenX}" y2="${screenY}" stroke="#654321" stroke-width="1.5" />
+              <line x1="${obs.x + obs.width}" y1="${obsSvgY}" x2="${screenX + screenW}" y2="${screenY}" stroke="#654321" stroke-width="1.5" />
+              <line x1="${obs.x}" y1="${obsSvgY + obs.height}" x2="${screenX}" y2="${screenY + screenH}" stroke="#654321" stroke-width="1.5" />
+              <line x1="${obs.x + obs.width}" y1="${obsSvgY + obs.height}" x2="${screenX + screenW}" y2="${screenY + screenH}" stroke="#654321" stroke-width="1.5" />
+
+              <!-- Canvas Art Display Screen -->
+              <defs>
+                <linearGradient id="tv-art-${obs.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#80b3a6" />
+                  <stop offset="35%" stop-color="#b6c9a8" />
+                  <stop offset="65%" stop-color="#e9ddaa" />
+                  <stop offset="100%" stop-color="#d1b876" />
+                </linearGradient>
+              </defs>
+              <rect x="${screenX}" y="${screenY}" width="${screenW}" height="${screenH}" fill="url(#tv-art-${obs.id})" stroke="#43281c" stroke-width="1" />
+              
+              <!-- Impressionist Landscape Canvas (Hommage to Van Gogh wheat field / olive grove from screenshot) -->
+              <path d="M ${screenX} ${screenY + screenH*0.72} Q ${screenX + screenW*0.3} ${screenY + screenH*0.58} ${screenX + screenW*0.6} ${screenY + screenH*0.7} T ${screenX + screenW} ${screenY + screenH*0.65} L ${screenX + screenW} ${screenY + screenH} L ${screenX} ${screenY + screenH} Z" fill="#9e9d24" opacity="0.6" />
+              <path d="M ${screenX} ${screenY + screenH*0.82} Q ${screenX + screenW*0.35} ${screenY + screenH*0.74} ${screenX + screenW*0.72} ${screenY + screenH*0.84} T ${screenX + screenW} ${screenY + screenH*0.78} L ${screenX + screenW} ${screenY + screenH} L ${screenX} ${screenY + screenH} Z" fill="#558b2f" opacity="0.55" />
+
+              <!-- "CanvasTV" badge -->
+              <text x="${screenX + 16}" y="${screenY + 24}" font-size="14" font-family="system-ui, -apple-system, sans-serif" font-weight="700" fill="#ffffff" letter-spacing="0.5" opacity="0.95" style="text-shadow: 0 1px 3px rgba(0,0,0,0.6);">CanvasTV</text>
+
+              <!-- VESA Wall Mount Center Indicator -->
+              <circle cx="${obs.x + obs.width/2}" cy="${obsSvgY + obs.height/2}" r="6" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+              <line x1="${obs.x + obs.width/2 - 10}" y1="${obsSvgY + obs.height/2}" x2="${obs.x + obs.width/2 + 10}" y2="${obsSvgY + obs.height/2}" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+              <line x1="${obs.x + obs.width/2}" y1="${obsSvgY + obs.height/2 - 10}" x2="${obs.x + obs.width/2}" y2="${obsSvgY + obs.height/2 + 10}" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+
+              <!-- Bottom TV Model Spec Badge -->
+              <rect x="${obs.x + obs.width/2 - 120}" y="${obsSvgY + obs.height - 24}" width="240" height="18" rx="3" fill="rgba(0,0,0,0.65)" />
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY + obs.height - 11}" font-size="10" font-family="system-ui, sans-serif" fill="#ffffff" text-anchor="middle" font-weight="600">
+                ${obs.name} (${formatLength(obs.width)} &times; ${formatLength(obs.height)})
+              </text>
+            </g>
+          `;
+
+          // Clearance Dimension Line above chair rail
+          if (showDims && clearanceToRail > 0) {
+            const clearX = obs.x + obs.width/2;
+            const tvBottomY = obsSvgY + obs.height;
+            const railTopY = geo.wallHeight - geo.wainscotHeight;
+            markup += `
+              <g class="dim-tv-clearance">
+                <line x1="${clearX}" y1="${tvBottomY}" x2="${clearX}" y2="${railTopY}" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="3,3" />
+                <line x1="${clearX - 8}" y1="${tvBottomY}" x2="${clearX + 8}" y2="${tvBottomY}" stroke="#2563eb" stroke-width="1.5" />
+                <line x1="${clearX - 8}" y1="${railTopY}" x2="${clearX + 8}" y2="${railTopY}" stroke="#2563eb" stroke-width="1.5" />
+                <rect x="${clearX + 8}" y="${(tvBottomY + railTopY)/2 - 9}" width="115" height="18" rx="3" fill="#eff6ff" stroke="#93c5fd" />
+                <text x="${clearX + 13}" y="${(tvBottomY + railTopY)/2 + 4}" font-size="10" font-family="system-ui, sans-serif" fill="#1d4ed8" font-weight="600">
+                  Gap: ${formatLength(clearanceToRail)}
+                </text>
+              </g>
+            `;
+          }
+        } else if (obs.type === 'door') {
+          // Doorway
+          markup += `
+            <g id="${obs.id}" class="obstacle-door-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+              <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${isDark ? '#1e293b' : '#f8fafc'}" stroke="#94a3b8" stroke-width="2" />
+              <!-- Casing architrave -->
+              <rect x="${obs.x + 10}" y="${obsSvgY + 10}" width="${obs.width - 20}" height="${obs.height - 10}" fill="none" stroke="#cbd5e1" stroke-width="1.5" />
+              <!-- Door knob -->
+              <circle cx="${obs.x + obs.width - 35}" cy="${obsSvgY + obs.height/2}" r="6" fill="#d97706" />
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
+            </g>
+          `;
+        } else if (obs.type === 'window') {
+          // Window
+          const paneW = (obs.width - 24) / 2;
+          const paneH = (obs.height - 24) / 2;
+          markup += `
+            <g id="${obs.id}" class="obstacle-window-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+              <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${isDark ? '#0f172a' : '#e0f2fe'}" stroke="#0284c7" stroke-width="2" rx="2" />
+              <!-- 4 panes -->
+              <rect x="${obs.x + 6}" y="${obsSvgY + 6}" width="${paneW}" height="${paneH}" fill="rgba(255,255,255,0.4)" stroke="#38bdf8" stroke-width="1" />
+              <rect x="${obs.x + 18 + paneW}" y="${obsSvgY + 6}" width="${paneW}" height="${paneH}" fill="rgba(255,255,255,0.4)" stroke="#38bdf8" stroke-width="1" />
+              <rect x="${obs.x + 6}" y="${obsSvgY + 18 + paneH}" width="${paneW}" height="${paneH}" fill="rgba(255,255,255,0.4)" stroke="#38bdf8" stroke-width="1" />
+              <rect x="${obs.x + 18 + paneW}" y="${obsSvgY + 18 + paneH}" width="${paneW}" height="${paneH}" fill="rgba(255,255,255,0.4)" stroke="#38bdf8" stroke-width="1" />
+              <!-- Window Sill -->
+              <line x1="${obs.x - 10}" y1="${obsSvgY + obs.height}" x2="${obs.x + obs.width + 10}" y2="${obsSvgY + obs.height}" stroke="#0369a1" stroke-width="4" />
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
+            </g>
+          `;
+        } else {
+          // Power Outlet or other fixture
+          markup += `
+            <g id="${obs.id}" class="obstacle-svg-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+              <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${obsFill}" stroke="${obsStroke}" stroke-width="2" stroke-dasharray="4,2" rx="3" />
+              <!-- Receptacle holes detail -->
+              <circle cx="${obs.x + obs.width * 0.35}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
+              <circle cx="${obs.x + obs.width * 0.65}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
+              <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
+            </g>
+          `;
+        }
       });
 
       // Render Architectural Dimension Strings

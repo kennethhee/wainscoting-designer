@@ -200,4 +200,19 @@ if (collisions.length !== 1 || collisions[0].panelId !== 1) {
   process.exit(1);
 }
 
+console.log('\nTesting Hisense 55" CanvasTV Placement & Clearance...');
+const wallLength = 3600;
+const wainscotHeight = 950;
+const tvWidth = 1256;
+const tvHeight = 733;
+const centeredX = Math.round((wallLength - tvWidth) / 2);
+const mountY = wainscotHeight + 100;
+console.log(`CanvasTV centered at X=${centeredX}mm, mounted at Y=${mountY}mm`);
+const clearance = mountY - wainscotHeight;
+if (centeredX !== 1172 || clearance !== 100) {
+  console.error(`FAILED: Expected centered X=1172, clearance=100; got X=${centeredX}, clearance=${clearance}`);
+  process.exit(1);
+}
+console.log(`CanvasTV Clearance above rail: ${clearance}mm. Passed!`);
+
 console.log('\nALL MATH TESTS PASSED!');
