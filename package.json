@@ -1,0 +1,21 @@
+{
+  "name": "wainscoting-designer",
+  "version": "1.0.0",
+  "description": "Architectural Wainscoting Designer, Layout Engine, and Carpentry Calculator",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node test_calculator.js"
+  },
+  "keywords": [
+    "wainscoting",
+    "carpentry",
+    "woodworking",
+    "calculator",
+    "cut-list",
+    "moulding",
+    "board-and-batten"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wainscot Studio - Designer &amp; Calculator</title>
+  <style>
+    :root {
+      --bg-primary: #12151b;
+      --bg-surface: #1a1e27;
+      --bg-surface-elevated: #232834;
+      --bg-card: #1e232e;
+      --border-color: #2e3545;
+      --border-focus: #3b82f6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-light: rgba(37, 99, 235, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --wood: #a27b5c;
+      --canvas-bg: #0f1117;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Unit toggle */
+    .unit-selector {
+      display: flex;
+      background: var(--bg-surface-elevated);
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .unit-btn {
+      background: none;
+      border: none;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .unit-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Preset selector */
+    .preset-select {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: #2b3242;
+      border-color: #3e475c;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn-danger {
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    /* Main Layout */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      flex: 1;
+      height: calc(100vh - 61px);
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-section {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-header {
+      padding: 12px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .section-body {
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Form controls */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .label-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--text-main);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--border-focus);
+    }
+
+    .input-unit {
+      position: absolute;
+      right: 10px;
+      font-size: 11px;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .input-with-unit input {
+      padding-right: 36px;
+    }
+
+    /* Wall tabs */
+    .wall-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 8px 18px;
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-color);
+      align-items: center;
+    }
+
+    .wall-tab {
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wall-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* Obstacles list */
+    .obstacle-item {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .obstacle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .obstacle-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Canvas / Work Area */
+    .work-area {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--canvas-bg);
+      position: relative;
+    }
+
+    .canvas-toolbar {
+      padding: 10px 18px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    svg#elevation-svg {
+      width: 100%;
+      height: 100%;
+      user-select: none;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+    }
+
+    /* Tooltip */
+    #designer-tooltip {
+      position: absolute;
+      background: rgba(18, 21, 27, 0.95);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #fff;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Conflict Banner */
+    .conflict-banner {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning);
+      color: #fbbf24;
+      padding: 8px 14px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* Bottom Info & Output Drawer */
+    .bottom-drawer {
+      height: 280px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .drawer-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-surface-elevated);
+      padding: 0 16px;
+    }
+
+    .drawer-tab {
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .drawer-tab.active {
+      color: #fff;
+      border-bottom-color: var(--accent);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    /* Tables */
+    .cut-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .cut-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+    }
+
+    .cut-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .cut-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-miter {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .badge-butt {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    /* Stock Board Visualizer */
+    .stock-board-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .stock-board-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+
+    .stock-board-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    .stock-board-bar {
+      display: flex;
+      height: 28px;
+      background: #11141a;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .cut-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      position: relative;
+      border-right: 2px solid #000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 4px;
+    }
+
+    .cut-segment.waste {
+      background: repeating-linear-gradient(
+        45deg,
+        #2a2f3a,
+        #2a2f3a 6px,
+        #1e232e 6px,
+        #1e232e 12px
+      );
+      color: var(--text-dim);
+    }
+
+    /* Materials Grid */
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .material-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .material-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .material-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .material-detail {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* Cost calculator table */
+    .cost-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .cost-table th, .cost-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+    }
+
+    .cost-table th {
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .cost-total-row td {
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      background: rgba(37, 99, 235, 0.1);
+      border-top: 2px solid var(--accent);
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      header, .sidebar, .canvas-toolbar, .drawer-tabs, .btn, .header-actions {
+        display: none !important;
+      }
+      .app-layout {
+        display: block !important;
+        height: auto !important;
+      }
+      .work-area {
+        background: #fff !important;
+      }
+      .canvas-container {
+        padding: 0 !important;
+        height: 400px !important;
+      }
+      svg#elevation-svg {
+        filter: none !important;
+      }
+      .bottom-drawer {
+        height: auto !important;
+        background: #fff !important;
+        border: none !important;
+      }
+      .cut-table th, .cut-table td, .cost-table th, .cost-table td {
+        color: #000 !important;
+        border-color: #ddd !important;
+        background: #fff !important;
+      }
+      .stock-board-card {
+        background: #fff !important;
+        border: 1px solid #ccc !important;
+        color: #000 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">W</div>
+      <div>
+        <div class="brand-title">Wainscot Studio</div>
+        <div class="brand-subtitle">Architectural Designer &amp; Precision Calculator</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Unit toggle -->
+      <div class="unit-selector">
+        <button class="unit-btn active" id="unit-mm-btn" onclick="setUnit('mm')">Metric (mm)</button>
+        <button class="unit-btn" id="unit-in-btn" onclick="setUnit('in')">Imperial (in)</button>
+      </div>
+
+      <!-- Presets -->
+      <select class="preset-select" id="preset-selector" onchange="applyPreset(this.value)">
+        <option value="" disabled selected>Load Preset...</option>
+        <option value="classic_picture_frame">Classic Picture Frame (Shadow Box)</option>
+        <option value="double_picture_frame">Double Picture Frame (Nested Box)</option>
+        <option value="board_and_batten">Craftsman Board &amp; Batten</option>
+        <option value="grid_batten">Modern Grid Board &amp; Batten</option>
+        <option value="shaker_recessed">Recessed Shaker Panel</option>
+        <option value="raised_panel">Traditional Raised Panel</option>
+        <option value="beadboard">Cottage Beadboard &amp; Dado</option>
+      </select>
+
+      <button class="btn" onclick="exportCSV()">Download CSV</button>
+      <button class="btn" onclick="exportProjectJSON()">Save JSON</button>
+      <label class="btn" style="cursor: pointer; margin: 0;">
+        Load JSON
+        <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importProjectJSON(event)">
+      </label>
+      <button class="btn btn-primary" onclick="window.print()">Print Plan</button>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="app-layout">
+
+    <!-- Sidebar Controls -->
+    <aside class="sidebar">
+
+      <!-- Wall Selector Tabs -->
+      <div class="wall-tabs" id="wall-tabs-container">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Wall & Height Dimensions -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>Wall &amp; Wainscot Dimensions</span>
+        </div>
+        <div class="section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Wall Length <span class="label-hint" id="wall-len-unit-lbl">(mm)</span></label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-wall-length" value="3600" min="500" max="25000" step="10" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Wall Height <span class="label-hint" id="wall-hgt-unit-lbl">(mm)</span></label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-wall-height" value="2400" min="1000" max="8000" step="10" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Wainscot Height</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-wainscot-height" value="950" min="200" max="8000" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Height Preset</label>
+              <select id="wainscot-height-preset" onchange="applyHeightPreset(this.value)">
+                <option value="custom">Custom</option>
+                <option value="third" selected>1/3 Rule (Dado / 950mm)</option>
+                <option value="half">1/2 Wall (1200mm)</option>
+                <option value="two_thirds">2/3 Wall (High / 1600mm)</option>
+                <option value="full">Full Wall Height</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Baseboard Height</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-baseboard-height" value="140" min="0" max="400" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Chair Rail Width</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-chair-rail-height" value="65" min="0" max="200" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wainscoting Style & Moulding -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>Style &amp; Profile</span>
+        </div>
+        <div class="section-body">
+          <div class="form-group">
+            <label>Wainscot Style</label>
+            <select id="in-wainscot-style" onchange="onStyleChange()">
+              <option value="picture_frame" selected>Picture Frame (Box Moulding)</option>
+              <option value="double_picture_frame">Double Picture Frame (Nested)</option>
+              <option value="board_and_batten">Board and Batten</option>
+              <option value="grid_batten">Grid Board &amp; Batten</option>
+              <option value="recessed_shaker">Recessed Shaker Panel</option>
+              <option value="raised_panel">Raised Panel</option>
+              <option value="beadboard">Beadboard Paneling</option>
+            </select>
+          </div>
+
+          <div class="form-row" id="row-moulding-width">
+            <div class="form-group">
+              <label id="lbl-trim-width">Moulding Profile Width</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-trim-width" value="40" min="15" max="200" step="1" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group" id="group-inner-gap">
+              <label>Inner Box Offset</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-inner-gap" value="60" min="20" max="300" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row" id="row-grid-tiers" style="display: none;">
+            <div class="form-group">
+              <label>Horizontal Tiers / Rows</label>
+              <input type="number" id="in-grid-rows" value="2" min="1" max="6" step="1" oninput="updateCalculation()">
+            </div>
+            <div class="form-group">
+              <label>Horizontal Rail Width</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-grid-rail-width" value="75" min="20" max="200" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spacing Engine -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>Panel Spacing Engine</span>
+        </div>
+        <div class="section-body">
+          <div class="form-group">
+            <label>Calculation Mode</label>
+            <select id="in-calc-mode" onchange="onCalcModeChange()">
+              <option value="auto_count" selected>Fix Panel Count (Compute Equal Widths)</option>
+              <option value="target_width">Target Panel Width (Compute Optimal Count)</option>
+              <option value="fixed_spacing">Fix Stile Spacing (Uniform Gaps)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" id="group-panel-count">
+              <label>Panel / Box Count</label>
+              <input type="number" id="in-panel-count" value="4" min="1" max="30" step="1" oninput="updateCalculation()">
+            </div>
+            <div class="form-group" id="group-target-width" style="display: none;">
+              <label>Target Box Width</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-target-width" value="600" min="150" max="3000" step="10" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Stile / Gap Spacing</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-spacing" value="100" min="20" max="600" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Wall End Margins</label>
+              <select id="in-margin-mode" onchange="onMarginModeChange()">
+                <option value="equal" selected>Equal to Stile Gap</option>
+                <option value="custom">Custom Edge Margin</option>
+              </select>
+            </div>
+            <div class="form-group" id="group-custom-margin" style="display: none;">
+              <label>Edge Margin</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-custom-margin" value="100" min="10" max="1000" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vertical Margins -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bottom Margin (above base)</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-margin-bottom" value="80" min="10" max="400" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Top Margin (below rail)</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-margin-top" value="80" min="10" max="400" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two-tier option for picture frames -->
+          <div class="form-group" id="group-two-tier">
+            <label style="cursor: pointer;">
+              <span>Two-Tier Layout (Upper &amp; Lower Boxes)</span>
+              <input type="checkbox" id="in-two-tier" onchange="updateCalculation()">
+            </label>
+            <div class="form-row" id="row-tier-split" style="display: none; margin-top: 6px;">
+              <div class="form-group">
+                <label>Lower Box Ratio</label>
+                <input type="number" id="in-tier-ratio" value="0.35" min="0.1" max="0.9" step="0.05" oninput="updateCalculation()">
+              </div>
+              <div class="form-group">
+                <label>Mid Rail Gap</label>
+                <div class="input-wrapper input-with-unit">
+                  <input type="number" id="in-tier-gap" value="80" min="20" max="300" step="5" oninput="updateCalculation()">
+                  <span class="input-unit unit-label">mm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Obstacles Management -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>Openings &amp; Obstacles</span>
+          <button class="btn btn-sm" onclick="addObstacle()">+ Add Obstacle</button>
+        </div>
+        <div class="section-body" id="obstacles-container">
+          <!-- Dynamic obstacle cards rendered here -->
+        </div>
+      </div>
+
+      <!-- Aesthetics & Display Options -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>Appearance &amp; Colors</span>
+        </div>
+        <div class="section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Wall Paint Color</label>
+              <select id="in-wall-color" onchange="renderElevation()">
+                <option value="#f8fafc">Pure White (#f8fafc)</option>
+                <option value="#f1f5f9" selected>Off White (#f1f5f9)</option>
+                <option value="#e2e8f0">Light Grey (#e2e8f0)</option>
+                <option value="#334155">Hale Navy (#334155)</option>
+                <option value="#1e293b">Dark Charcoal (#1e293b)</option>
+                <option value="#3f4e4f">Sage Green (#3f4e4f)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Moulding / Trim Color</label>
+              <select id="in-trim-color" onchange="renderElevation()">
+                <option value="#ffffff" selected>Bright White (#ffffff)</option>
+                <option value="#f8fafc">Alabaster White (#f8fafc)</option>
+                <option value="#e2e8f0">Soft Grey Trim (#e2e8f0)</option>
+                <option value="#334155">Navy Trim (#334155)</option>
+                <option value="#1e293b">Charcoal Trim (#1e293b)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label style="cursor: pointer;">
+                <span>Show Dimension Annotations</span>
+                <input type="checkbox" id="in-show-dims" checked onchange="renderElevation()">
+              </label>
+            </div>
+            <div class="form-group">
+              <label style="cursor: pointer;">
+                <span>Realistic Shading &amp; Miters</span>
+                <input type="checkbox" id="in-show-shading" checked onchange="renderElevation()">
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="work-area">
+
+      <!-- Collision Alert Banner -->
+      <div id="conflict-alert" class="conflict-banner" style="display: none;">
+        <span id="conflict-text">Warning: An electrical outlet or opening overlaps a moulding stile!</span>
+        <button class="btn btn-sm btn-danger" onclick="dismissConflictAlert()">Acknowledge</button>
+      </div>
+
+      <!-- Canvas Toolbar -->
+      <div class="canvas-toolbar">
+        <div class="toolbar-group">
+          <strong>Wall Elevation View</strong>
+          <span style="color: var(--text-dim);">|</span>
+          <span id="canvas-summary-text" style="color: var(--text-muted);">4 Panels &bull; Spacing: 100mm &bull; Box Width: 775mm</span>
+        </div>
+        <div class="toolbar-group">
+          <button class="btn btn-sm" onclick="zoomCanvas(1.15)">Zoom In</button>
+          <button class="btn btn-sm" onclick="zoomCanvas(0.85)">Zoom Out</button>
+          <button class="btn btn-sm" onclick="resetCanvasZoom()">Fit to View</button>
+        </div>
+      </div>
+
+      <!-- Elevation SVG Canvas -->
+      <div class="canvas-container" id="canvas-wrapper">
+        <svg id="elevation-svg" xmlns="http://www.w3.org/2000/svg">
+          <!-- Rendered dynamically -->
+        </svg>
+        <div id="designer-tooltip"></div>
+      </div>
+
+      <!-- Bottom Drawer: Cut List, Stock Optimizer, Supplies, Spec -->
+      <section class="bottom-drawer">
+        <div class="drawer-tabs">
+          <div class="drawer-tab active" data-tab="cutlist" onclick="setDrawerTab('cutlist')">Cut List Schedule</div>
+          <div class="drawer-tab" data-tab="stock" onclick="setDrawerTab('stock')">Cutting Stock Optimizer</div>
+          <div class="drawer-tab" data-tab="supplies" onclick="setDrawerTab('supplies')">Hardware &amp; Materials</div>
+          <div class="drawer-tab" data-tab="cost" onclick="setDrawerTab('cost')">Cost Estimator</div>
+        </div>
+
+        <!-- Cut List Tab -->
+        <div class="drawer-content" id="tab-content-cutlist">
+          <table class="cut-table" id="cut-list-table">
+            <thead>
+              <tr>
+                <th>Piece Tag</th>
+                <th>Component</th>
+                <th>Length</th>
+                <th>Width / Height</th>
+                <th>Ends / Joint Cut</th>
+                <th>Quantity</th>
+                <th>Total Linear</th>
+              </tr>
+            </thead>
+            <tbody id="cut-list-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Stock Optimizer Tab -->
+        <div class="drawer-content" id="tab-content-stock" style="display: none;">
+          <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 14px;">
+            <div style="font-size: 13px;">
+              <strong>Stock Board Length:</strong>
+              <select id="in-stock-board-length" onchange="updateCalculation()" style="width: 140px; margin-left: 6px;">
+                <option value="2400" selected>2.4m (8 ft)</option>
+                <option value="3000">3.0m (10 ft)</option>
+                <option value="3600">3.6m (12 ft)</option>
+                <option value="4800">4.8m (16 ft)</option>
+              </select>
+            </div>
+            <div style="font-size: 13px;">
+              <strong>Saw Kerf:</strong>
+              <select id="in-saw-kerf" onchange="updateCalculation()" style="width: 100px; margin-left: 6px;">
+                <option value="3" selected>3mm (1/8")</option>
+                <option value="2">2mm (5/64")</option>
+                <option value="4">4mm (5/32")</option>
+              </select>
+            </div>
+            <div id="stock-summary-stats" style="font-size: 13px; color: var(--text-muted); margin-left: auto;">
+              <!-- Summary boards needed -->
+            </div>
+          </div>
+          <div class="stock-board-list" id="stock-board-visualizer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Supplies Tab -->
+        <div class="drawer-content" id="tab-content-supplies" style="display: none;">
+          <div class="materials-grid" id="materials-grid-container">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Cost Estimator Tab -->
+        <div class="drawer-content" id="tab-content-cost" style="display: none;">
+          <table class="cost-table">
+            <thead>
+              <tr>
+                <th>Item Description</th>
+                <th>Quantity / Metric</th>
+                <th>Unit Price ($)</th>
+                <th>Total ($)</th>
+              </tr>
+            </thead>
+            <tbody id="cost-table-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <script>
+    /* Wainscot Studio - Core Application Logic */
+
+    // App State
+    const state = {
+      unit: 'mm', // 'mm' or 'in'
+      currentWallIndex: 0,
+      zoomLevel: 1.0,
+      walls: [
+        {
+          id: 'wall-1',
+          name: 'Wall 1 (Main)',
+          wallLength: 3600,
+          wallHeight: 2400,
+          wainscotHeight: 950,
+          baseboardHeight: 140,
+          chairRailHeight: 65,
+          style: 'picture_frame',
+          trimWidth: 40,
+          innerGap: 60,
+          gridRows: 2,
+          gridRailWidth: 75,
+          calcMode: 'auto_count', // 'auto_count', 'target_width', 'fixed_spacing'
+          panelCount: 4,
+          targetWidth: 600,
+          spacing: 100,
+          marginMode: 'equal', // 'equal' or 'custom'
+          customMargin: 100,
+          marginBottom: 80,
+          marginTop: 80,
+          twoTier: false,
+          tierRatio: 0.35,
+          tierGap: 80,
+          obstacles: [
+            {
+              id: 'obs-1',
+              name: 'Double Power Outlet',
+              type: 'outlet',
+              x: 950,
+              y: 350,
+              width: 120,
+              height: 75
+            }
+          ]
+        }
+      ],
+      unitPrices: {
+        mouldingPerUnit: 4.5, // per meter or per foot
+        chairRailPerUnit: 12.0,
+        baseboardPerUnit: 14.0,
+        sheetPanelsPerSqUnit: 18.0,
+        adhesiveTube: 8.5,
+        caulkTube: 6.0,
+        fillerTub: 9.0,
+        paintPerUnit: 35.0,
+        nailsBox: 12.0
+      }
+    };
+
+    // Unit conversion constants
+    const MM_TO_INCH = 1 / 25.4;
+    const INCH_TO_MM = 25.4;
+
+    function setUnit(u) {
+      if (state.unit === u) return;
+      const oldUnit = state.unit;
+      state.unit = u;
+
+      document.getElementById('unit-mm-btn').classList.toggle('active', u === 'mm');
+      document.getElementById('unit-in-btn').classList.toggle('active', u === 'in');
+
+      // Update UI unit labels
+      document.querySelectorAll('.unit-label').forEach(el => el.textContent = u);
+      document.getElementById('wall-len-unit-lbl').textContent = `(${u})`;
+      document.getElementById('wall-hgt-unit-lbl').textContent = `(${u})`;
+
+      // Convert active wall values
+      const factor = u === 'in' ? MM_TO_INCH : INCH_TO_MM;
+      state.walls.forEach(w => {
+        w.wallLength = roundUnit(w.wallLength * factor, u);
+        w.wallHeight = roundUnit(w.wallHeight * factor, u);
+        w.wainscotHeight = roundUnit(w.wainscotHeight * factor, u);
+        w.baseboardHeight = roundUnit(w.baseboardHeight * factor, u);
+        w.chairRailHeight = roundUnit(w.chairRailHeight * factor, u);
+        w.trimWidth = roundUnit(w.trimWidth * factor, u);
+        w.innerGap = roundUnit(w.innerGap * factor, u);
+        w.gridRailWidth = roundUnit(w.gridRailWidth * factor, u);
+        w.targetWidth = roundUnit(w.targetWidth * factor, u);
+        w.spacing = roundUnit(w.spacing * factor, u);
+        w.customMargin = roundUnit(w.customMargin * factor, u);
+        w.marginBottom = roundUnit(w.marginBottom * factor, u);
+        w.marginTop = roundUnit(w.marginTop * factor, u);
+        w.tierGap = roundUnit(w.tierGap * factor, u);
+        w.obstacles.forEach(o => {
+          o.x = roundUnit(o.x * factor, u);
+          o.y = roundUnit(o.y * factor, u);
+          o.width = roundUnit(o.width * factor, u);
+          o.height = roundUnit(o.height * factor, u);
+        });
+      });
+
+      syncInputsFromState();
+      updateCalculation();
+    }
+
+    function roundUnit(val, unit) {
+      if (unit === 'in') {
+        return Math.round(val * 16) / 16;
+      }
+      return Math.round(val);
+    }
+
+    function formatLength(val, showUnit = true) {
+      if (state.unit === 'in') {
+        const whole = Math.floor(val);
+        const frac = val - whole;
+        const sixteenths = Math.round(frac * 16);
+        let s = '';
+        if (sixteenths === 0) {
+          s = `${whole}`;
+        } else if (sixteenths === 16) {
+          s = `${whole + 1}`;
+        } else {
+          let num = sixteenths;
+          let den = 16;
+          while (num % 2 === 0 && den % 2 === 0) {
+            num /= 2;
+            den /= 2;
+          }
+          s = whole > 0 ? `${whole} ${num}/${den}` : `${num}/${den}`;
+        }
+        return showUnit ? `${s}"` : s;
+      }
+      return showUnit ? `${Math.round(val)} mm` : `${Math.round(val)}`;
+    }
+
+    function getActiveWall() {
+      return state.walls[state.currentWallIndex] || state.walls[0];
+    }
+
+    function syncInputsFromState() {
+      const w = getActiveWall();
+      document.getElementById('in-wall-length').value = w.wallLength;
+      document.getElementById('in-wall-height').value = w.wallHeight;
+      document.getElementById('in-wainscot-height').value = w.wainscotHeight;
+      document.getElementById('in-baseboard-height').value = w.baseboardHeight;
+      document.getElementById('in-chair-rail-height').value = w.chairRailHeight;
+      document.getElementById('in-wainscot-style').value = w.style;
+      document.getElementById('in-trim-width').value = w.trimWidth;
+      document.getElementById('in-inner-gap').value = w.innerGap;
+      document.getElementById('in-grid-rows').value = w.gridRows;
+      document.getElementById('in-grid-rail-width').value = w.gridRailWidth;
+      document.getElementById('in-calc-mode').value = w.calcMode;
+      document.getElementById('in-panel-count').value = w.panelCount;
+      document.getElementById('in-target-width').value = w.targetWidth;
+      document.getElementById('in-spacing').value = w.spacing;
+      document.getElementById('in-margin-mode').value = w.marginMode;
+      document.getElementById('in-custom-margin').value = w.customMargin;
+      document.getElementById('in-margin-bottom').value = w.marginBottom;
+      document.getElementById('in-margin-top').value = w.marginTop;
+      document.getElementById('in-two-tier').checked = w.twoTier;
+      document.getElementById('in-tier-ratio').value = w.tierRatio;
+      document.getElementById('in-tier-gap').value = w.tierGap;
+
+      onStyleChange();
+      onCalcModeChange();
+      onMarginModeChange();
+      renderWallTabs();
+      renderObstaclesList();
+    }
+
+    function syncStateFromInputs() {
+      const w = getActiveWall();
+      w.wallLength = parseFloat(document.getElementById('in-wall-length').value) || 1000;
+      w.wallHeight = parseFloat(document.getElementById('in-wall-height').value) || 1000;
+      w.wainscotHeight = parseFloat(document.getElementById('in-wainscot-height').value) || 600;
+      w.baseboardHeight = parseFloat(document.getElementById('in-baseboard-height').value) || 0;
+      w.chairRailHeight = parseFloat(document.getElementById('in-chair-rail-height').value) || 0;
+      w.style = document.getElementById('in-wainscot-style').value;
+      w.trimWidth = parseFloat(document.getElementById('in-trim-width').value) || 20;
+      w.innerGap = parseFloat(document.getElementById('in-inner-gap').value) || 40;
+      w.gridRows = parseInt(document.getElementById('in-grid-rows').value, 10) || 1;
+      w.gridRailWidth = parseFloat(document.getElementById('in-grid-rail-width').value) || 50;
+      w.calcMode = document.getElementById('in-calc-mode').value;
+      w.panelCount = parseInt(document.getElementById('in-panel-count').value, 10) || 1;
+      w.targetWidth = parseFloat(document.getElementById('in-target-width').value) || 500;
+      w.spacing = parseFloat(document.getElementById('in-spacing').value) || 50;
+      w.marginMode = document.getElementById('in-margin-mode').value;
+      w.customMargin = parseFloat(document.getElementById('in-custom-margin').value) || 50;
+      w.marginBottom = parseFloat(document.getElementById('in-margin-bottom').value) || 50;
+      w.marginTop = parseFloat(document.getElementById('in-margin-top').value) || 50;
+      w.twoTier = document.getElementById('in-two-tier').checked;
+      w.tierRatio = parseFloat(document.getElementById('in-tier-ratio').value) || 0.35;
+      w.tierGap = parseFloat(document.getElementById('in-tier-gap').value) || 50;
+    }
+
+    function onStyleChange() {
+      const style = document.getElementById('in-wainscot-style').value;
+      const isDouble = style === 'double_picture_frame';
+      const isGrid = style === 'grid_batten';
+      const isPicture = style === 'picture_frame' || isDouble;
+
+      document.getElementById('group-inner-gap').style.display = isDouble ? 'flex' : 'none';
+      document.getElementById('row-grid-tiers').style.display = isGrid ? 'grid' : 'none';
+      document.getElementById('group-two-tier').style.display = isPicture ? 'block' : 'none';
+      document.getElementById('lbl-trim-width').textContent = isPicture ? 'Moulding Profile Width' : 'Batten / Stile Width';
+      
+      updateCalculation();
+    }
+
+    function onCalcModeChange() {
+      const mode = document.getElementById('in-calc-mode').value;
+      document.getElementById('group-panel-count').style.display = mode === 'auto_count' ? 'flex' : (mode === 'target_width' ? 'none' : 'flex');
+      document.getElementById('group-target-width').style.display = mode === 'target_width' ? 'flex' : 'none';
+      updateCalculation();
+    }
+
+    function onMarginModeChange() {
+      const mode = document.getElementById('in-margin-mode').value;
+      document.getElementById('group-custom-margin').style.display = mode === 'custom' ? 'flex' : 'none';
+      updateCalculation();
+    }
+
+    function applyHeightPreset(preset) {
+      const w = getActiveWall();
+      if (preset === 'third') {
+        w.wainscotHeight = roundUnit(w.wallHeight / 3, state.unit);
+      } else if (preset === 'half') {
+        w.wainscotHeight = roundUnit(w.wallHeight / 2, state.unit);
+      } else if (preset === 'two_thirds') {
+        w.wainscotHeight = roundUnit((w.wallHeight * 2) / 3, state.unit);
+      } else if (preset === 'full') {
+        w.wainscotHeight = w.wallHeight;
+      }
+      document.getElementById('in-wainscot-height').value = w.wainscotHeight;
+      updateCalculation();
+    }
+
+    function applyPreset(name) {
+      const w = getActiveWall();
+      const u = state.unit;
+      const isMm = u === 'mm';
+
+      if (name === 'classic_picture_frame') {
+        w.style = 'picture_frame';
+        w.wainscotHeight = isMm ? 950 : 38;
+        w.trimWidth = isMm ? 40 : 1.5;
+        w.spacing = isMm ? 100 : 4;
+        w.panelCount = 4;
+        w.marginMode = 'equal';
+        w.twoTier = false;
+      } else if (name === 'double_picture_frame') {
+        w.style = 'double_picture_frame';
+        w.wainscotHeight = isMm ? 1000 : 40;
+        w.trimWidth = isMm ? 38 : 1.5;
+        w.innerGap = isMm ? 60 : 2.5;
+        w.spacing = isMm ? 120 : 4.75;
+        w.panelCount = 4;
+        w.marginMode = 'equal';
+        w.twoTier = false;
+      } else if (name === 'board_and_batten') {
+        w.style = 'board_and_batten';
+        w.wainscotHeight = isMm ? 1400 : 56;
+        w.trimWidth = isMm ? 75 : 3;
+        w.spacing = isMm ? 320 : 13;
+        w.panelCount = 8;
+        w.marginMode = 'equal';
+        w.twoTier = false;
+      } else if (name === 'grid_batten') {
+        w.style = 'grid_batten';
+        w.wainscotHeight = isMm ? 1800 : 72;
+        w.trimWidth = isMm ? 75 : 3;
+        w.gridRailWidth = isMm ? 75 : 3;
+        w.gridRows = 3;
+        w.spacing = isMm ? 350 : 14;
+        w.panelCount = 6;
+        w.marginMode = 'equal';
+      } else if (name === 'shaker_recessed') {
+        w.style = 'recessed_shaker';
+        w.wainscotHeight = isMm ? 950 : 38;
+        w.trimWidth = isMm ? 90 : 3.5;
+        w.spacing = isMm ? 450 : 18;
+        w.panelCount = 5;
+        w.marginMode = 'equal';
+      } else if (name === 'raised_panel') {
+        w.style = 'raised_panel';
+        w.wainscotHeight = isMm ? 950 : 38;
+        w.trimWidth = isMm ? 90 : 3.5;
+        w.spacing = isMm ? 450 : 18;
+        w.panelCount = 4;
+        w.marginMode = 'equal';
+      } else if (name === 'beadboard') {
+        w.style = 'beadboard';
+        w.wainscotHeight = isMm ? 900 : 36;
+        w.trimWidth = isMm ? 45 : 1.75;
+        w.spacing = isMm ? 50 : 2;
+        w.panelCount = 10;
+        w.marginMode = 'equal';
+      }
+
+      syncInputsFromState();
+      updateCalculation();
+    }
+
+    /* Wall Management */
+    function renderWallTabs() {
+      const container = document.getElementById('wall-tabs-container');
+      container.innerHTML = '';
+      state.walls.forEach((w, idx) => {
+        const tab = document.createElement('div');
+        tab.className = `wall-tab ${idx === state.currentWallIndex ? 'active' : ''}`;
+        tab.innerHTML = `
+          <span>${w.name}</span>
+          ${state.walls.length > 1 ? `<span onclick="deleteWall(event, ${idx})" style="opacity: 0.7; font-weight: bold; margin-left: 4px;">&times;</span>` : ''}
+        `;
+        tab.onclick = (e) => {
+          if (e.target.tagName !== 'SPAN' || !e.target.textContent.includes('×')) {
+            switchWall(idx);
+          }
+        };
+        container.appendChild(tab);
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn-sm';
+      addBtn.textContent = '+ Wall';
+      addBtn.onclick = addWall;
+      container.appendChild(addBtn);
+    }
+
+    function switchWall(idx) {
+      syncStateFromInputs();
+      state.currentWallIndex = idx;
+      syncInputsFromState();
+      updateCalculation();
+    }
+
+    function addWall() {
+      syncStateFromInputs();
+      const current = getActiveWall();
+      const newWall = JSON.parse(JSON.stringify(current));
+      newWall.id = 'wall-' + (state.walls.length + 1);
+      newWall.name = `Wall ${state.walls.length + 1}`;
+      state.walls.push(newWall);
+      state.currentWallIndex = state.walls.length - 1;
+      syncInputsFromState();
+      updateCalculation();
+    }
+
+    function deleteWall(e, idx) {
+      e.stopPropagation();
+      if (state.walls.length <= 1) return;
+      state.walls.splice(idx, 1);
+      state.currentWallIndex = Math.max(0, state.currentWallIndex - 1);
+      syncInputsFromState();
+      updateCalculation();
+    }
+
+    /* Obstacles Management */
+    function renderObstaclesList() {
+      const container = document.getElementById('obstacles-container');
+      container.innerHTML = '';
+      const w = getActiveWall();
+
+      if (w.obstacles.length === 0) {
+        container.innerHTML = '<div style="font-size: 12px; color: var(--text-dim);">No obstacles added.</div>';
+        return;
+      }
+
+      w.obstacles.forEach((obs, idx) => {
+        const item = document.createElement('div');
+        item.className = 'obstacle-item';
+        item.innerHTML = `
+          <div class="obstacle-header">
+            <span class="obstacle-title">${obs.name}</span>
+            <button class="btn btn-sm btn-danger" onclick="removeObstacle(${idx})">Remove</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>X (from Left) <span class="label-hint">(${state.unit})</span></label>
+              <input type="number" value="${obs.x}" onchange="updateObstacle(${idx}, 'x', this.value)">
+            </div>
+            <div class="form-group">
+              <label>Y (from Floor) <span class="label-hint">(${state.unit})</span></label>
+              <input type="number" value="${obs.y}" onchange="updateObstacle(${idx}, 'y', this.value)">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Width <span class="label-hint">(${state.unit})</span></label>
+              <input type="number" value="${obs.width}" onchange="updateObstacle(${idx}, 'width', this.value)">
+            </div>
+            <div class="form-group">
+              <label>Height <span class="label-hint">(${state.unit})</span></label>
+              <input type="number" value="${obs.height}" onchange="updateObstacle(${idx}, 'height', this.value)">
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function addObstacle() {
+      const w = getActiveWall();
+      const isMm = state.unit === 'mm';
+      w.obstacles.push({
+        id: 'obs-' + (w.obstacles.length + 1),
+        name: 'Opening / Fixture ' + (w.obstacles.length + 1),
+        type: 'fixture',
+        x: isMm ? 1200 : 48,
+        y: isMm ? 300 : 12,
+        width: isMm ? 150 : 6,
+        height: isMm ? 120 : 5
+      });
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function removeObstacle(idx) {
+      const w = getActiveWall();
+      w.obstacles.splice(idx, 1);
+      renderObstaclesList();
+      updateCalculation();
+    }
+
+    function updateObstacle(idx, field, val) {
+      const w = getActiveWall();
+      w.obstacles[idx][field] = parseFloat(val) || 0;
+      updateCalculation();
+    }
+
+    /* Core Spacing & Geometry Calculation */
+    function calculateWallGeometry() {
+      syncStateFromInputs();
+      const w = getActiveWall();
+
+      const totalLength = w.wallLength;
+      const totalHeight = w.wallHeight;
+      const wainscotH = Math.min(w.wainscotHeight, totalHeight);
+      const baseH = w.baseboardHeight;
+      const railH = w.chairRailHeight;
+      const trimW = w.trimWidth;
+      const style = w.style;
+      const isBoardAndBatten = style === 'board_and_batten' || style === 'grid_batten' || style === 'recessed_shaker' || style === 'raised_panel' || style === 'beadboard';
+
+      // Available vertical span for panels/boxes
+      const availableVerticalSpan = Math.max(10, wainscotH - baseH - railH);
+      const verticalBottom = baseH + w.marginBottom;
+      const verticalTop = wainscotH - railH - w.marginTop;
+      const availableBoxH = Math.max(10, verticalTop - verticalBottom);
+
+      // Horizontal Layout
+      let numPanels = w.panelCount;
+      let spacing = w.spacing;
+      let leftMargin = w.marginMode === 'equal' ? spacing : w.customMargin;
+      let rightMargin = leftMargin;
+      let panelWidth = 0;
+
+      if (isBoardAndBatten) {
+        // In Board and Batten, battens are physical vertical stiles.
+        // Battens on left and right ends:
+        // Total wall = (numPanels + 1) * trimW + (numPanels * bayWidth)
+        if (w.calcMode === 'target_width') {
+          const targetW = w.targetWidth;
+          numPanels = Math.max(1, Math.round((totalLength - trimW) / (targetW + trimW)));
+        }
+        const totalBattenWidth = (numPanels + 1) * trimW;
+        panelWidth = Math.max(10, (totalLength - totalBattenWidth) / numPanels);
+        spacing = trimW; // Batten width is the separator
+        leftMargin = 0;
+        rightMargin = 0;
+      } else {
+        // Picture Frame Moulding (Boxes on drywall)
+        if (w.calcMode === 'auto_count') {
+          if (w.marginMode === 'equal') {
+            // (numPanels + 1) spaces equal to 'spacing'
+            const totalSpaces = (numPanels + 1) * spacing;
+            panelWidth = (totalLength - totalSpaces) / numPanels;
+            // If panel width becomes negative, adjust spacing
+            if (panelWidth <= 0) {
+              panelWidth = Math.max(50, totalLength / (numPanels * 2));
+              spacing = (totalLength - (numPanels * panelWidth)) / (numPanels + 1);
+              leftMargin = spacing;
+              rightMargin = spacing;
+            }
+          } else {
+            // custom margins at ends, (numPanels - 1) gaps of 'spacing'
+            leftMargin = w.customMargin;
+            rightMargin = w.customMargin;
+            const interiorSpaces = Math.max(0, numPanels - 1) * spacing;
+            panelWidth = (totalLength - (leftMargin + rightMargin) - interiorSpaces) / numPanels;
+          }
+        } else if (w.calcMode === 'target_width') {
+          const targetW = w.targetWidth;
+          const assumedGap = spacing;
+          numPanels = Math.max(1, Math.round((totalLength - assumedGap) / (targetW + assumedGap)));
+          if (w.marginMode === 'equal') {
+            spacing = (totalLength - (numPanels * targetW)) / (numPanels + 1);
+            leftMargin = spacing;
+            rightMargin = spacing;
+            panelWidth = targetW;
+          } else {
+            leftMargin = w.customMargin;
+            rightMargin = w.customMargin;
+            const remaining = totalLength - (leftMargin + rightMargin) - (numPanels * targetW);
+            spacing = numPanels > 1 ? remaining / (numPanels - 1) : remaining;
+            panelWidth = targetW;
+          }
+        } else if (w.calcMode === 'fixed_spacing') {
+          // Fixed spacing, compute panel width
+          if (w.marginMode === 'equal') {
+            leftMargin = spacing;
+            rightMargin = spacing;
+            panelWidth = (totalLength - (numPanels + 1) * spacing) / numPanels;
+          } else {
+            leftMargin = w.customMargin;
+            rightMargin = w.customMargin;
+            panelWidth = (totalLength - leftMargin - rightMargin - (numPanels - 1) * spacing) / numPanels;
+          }
+        }
+      }
+
+      // Generate Panels array
+      const panels = [];
+      let currentX = leftMargin;
+
+      for (let i = 0; i < numPanels; i++) {
+        const panelX = isBoardAndBatten ? (trimW + i * (panelWidth + trimW)) : currentX;
+        
+        if (w.twoTier && !isBoardAndBatten) {
+          // Two tiers: Lower Box and Upper Box
+          const lowerH = Math.max(10, availableBoxH * w.tierRatio);
+          const upperH = Math.max(10, availableBoxH - lowerH - w.tierGap);
+
+          panels.push({
+            id: `P${i + 1}-lower`,
+            index: i,
+            tier: 'lower',
+            x: panelX,
+            y: verticalBottom,
+            width: panelWidth,
+            height: lowerH
+          });
+
+          panels.push({
+            id: `P${i + 1}-upper`,
+            index: i,
+            tier: 'upper',
+            x: panelX,
+            y: verticalBottom + lowerH + w.tierGap,
+            width: panelWidth,
+            height: upperH
+          });
+
+        } else if (style === 'grid_batten') {
+          // Multiple grid rows
+          const rows = Math.max(1, w.gridRows);
+          const railW = w.gridRailWidth;
+          const totalRailH = (rows - 1) * railW;
+          const bayH = Math.max(10, (availableVerticalSpan - totalRailH) / rows);
+
+          for (let r = 0; r < rows; r++) {
+            panels.push({
+              id: `Bay-C${i + 1}-R${r + 1}`,
+              index: i,
+              row: r,
+              x: panelX,
+              y: baseH + r * (bayH + railW),
+              width: panelWidth,
+              height: bayH
+            });
+          }
+
+        } else {
+          // Standard single tier
+          panels.push({
+            id: isBoardAndBatten ? `Bay-${i + 1}` : `Panel-${i + 1}`,
+            index: i,
+            tier: 'single',
+            x: panelX,
+            y: isBoardAndBatten ? baseH : verticalBottom,
+            width: panelWidth,
+            height: isBoardAndBatten ? availableVerticalSpan : availableBoxH
+          });
+        }
+
+        if (!isBoardAndBatten) {
+          currentX += panelWidth + spacing;
+        }
+      }
+
+      // Check Obstacle Collisions
+      const conflicts = [];
+      w.obstacles.forEach(obs => {
+        // In Board & Batten, check if obstacle hits battens
+        if (isBoardAndBatten) {
+          for (let b = 0; b <= numPanels; b++) {
+            const battenX = b * (panelWidth + trimW);
+            const xHit = (obs.x < battenX + trimW) && (obs.x + obs.width > battenX);
+            const yHit = (obs.y < wainscotH) && (obs.y + obs.height > baseH);
+            if (xHit && yHit) {
+              conflicts.push({
+                obstacle: obs.name,
+                item: `Batten #${b + 1} at ${formatLength(battenX)}`
+              });
+            }
+          }
+        } else {
+          // In Picture Frame, check if obstacle intersects box moulding border lines
+          panels.forEach(p => {
+            const overlapX = (p.x < obs.x + obs.width) && (p.x + p.width > obs.x);
+            const overlapY = (p.y < obs.y + obs.height) && (p.y + p.height > obs.y);
+            if (overlapX && overlapY) {
+              // Check if it specifically cuts through moulding border perimeter
+              const innerX = p.x + trimW;
+              const innerW = p.width - 2 * trimW;
+              const innerY = p.y + trimW;
+              const innerH = p.height - 2 * trimW;
+              const completelyInside = (obs.x >= innerX) && (obs.x + obs.width <= innerX + innerW) &&
+                                       (obs.y >= innerY) && (obs.y + obs.height <= innerY + innerH);
+              if (!completelyInside) {
+                conflicts.push({
+                  obstacle: obs.name,
+                  item: `${p.id} Frame Perimeter`
+                });
+              }
+            }
+          });
+        }
+      });
+
+      return {
+        wallLength: totalLength,
+        wallHeight: totalHeight,
+        wainscotHeight: wainscotH,
+        baseboardHeight: baseH,
+        chairRailHeight: railH,
+        trimWidth: trimW,
+        innerGap: w.innerGap,
+        numPanels,
+        panelWidth,
+        panelHeight: availableBoxH,
+        spacing,
+        leftMargin,
+        rightMargin,
+        panels,
+        conflicts,
+        isBoardAndBatten
+      };
+    }
+
+    /* Elevation SVG Drawing */
+    function renderElevation() {
+      const geo = calculateWallGeometry();
+      const w = getActiveWall();
+      const svg = document.getElementById('elevation-svg');
+      const showDims = document.getElementById('in-show-dims').checked;
+      const showShading = document.getElementById('in-show-shading').checked;
+      const wallColor = document.getElementById('in-wall-color').value;
+      const trimColor = document.getElementById('in-trim-color').value;
+
+      // Conflict alert badge
+      const conflictAlert = document.getElementById('conflict-alert');
+      const conflictText = document.getElementById('conflict-text');
+      if (geo.conflicts.length > 0) {
+        conflictAlert.style.display = 'flex';
+        conflictText.textContent = `Warning: ${geo.conflicts[0].obstacle} overlaps ${geo.conflicts[0].item}!`;
+      } else {
+        conflictAlert.style.display = 'none';
+      }
+
+      // Summary label
+      document.getElementById('canvas-summary-text').innerHTML =
+        `${geo.numPanels} ${geo.isBoardAndBatten ? 'Bays' : 'Panels'} &bull; Width: <strong>${formatLength(geo.panelWidth)}</strong> &bull; Gap: <strong>${formatLength(geo.spacing)}</strong>`;
+
+      // Coordinate viewport setup
+      const padX = showDims ? 160 : 60;
+      const padY = showDims ? 180 : 60;
+      const svgW = geo.wallLength + (padX * 2);
+      const svgH = geo.wallHeight + (padY * 2);
+
+      svg.setAttribute('viewBox', `-${padX} -${padY} ${svgW} ${svgH}`);
+
+      let markup = `
+        <defs>
+          <filter id="moulding-shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.35" />
+          </filter>
+          <pattern id="beadboard-pattern" width="${state.unit === 'mm' ? 50 : 2}" height="100" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="100" stroke="rgba(0,0,0,0.15)" stroke-width="2" />
+            <line x1="2" y1="0" x2="2" y2="100" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+          </pattern>
+        </defs>
+
+        <!-- Wall Background -->
+        <rect x="0" y="0" width="${geo.wallLength}" height="${geo.wallHeight}" fill="${wallColor}" stroke="#475569" stroke-width="2" />
+      `;
+
+      // Beadboard or Panel Backing Sheet
+      if (w.style === 'beadboard') {
+        markup += `
+          <rect x="0" y="${geo.wallHeight - geo.wainscotHeight}" width="${geo.wallLength}" height="${geo.wainscotHeight - geo.baseboardHeight}" fill="${trimColor}" />
+          <rect x="0" y="${geo.wallHeight - geo.wainscotHeight}" width="${geo.wallLength}" height="${geo.wainscotHeight - geo.baseboardHeight}" fill="url(#beadboard-pattern)" />
+        `;
+      } else if (w.style === 'recessed_shaker' || w.style === 'raised_panel') {
+        markup += `
+          <rect x="0" y="${geo.wallHeight - geo.wainscotHeight}" width="${geo.wallLength}" height="${geo.wainscotHeight - geo.baseboardHeight}" fill="${trimColor}" opacity="0.95" />
+        `;
+      }
+
+      // Baseboard
+      const baseTopY = geo.wallHeight - geo.baseboardHeight;
+      markup += `
+        <g id="baseboard-group">
+          <rect x="0" y="${baseTopY}" width="${geo.wallLength}" height="${geo.baseboardHeight}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+          <!-- Base cap line -->
+          <line x1="0" y1="${baseTopY + 12}" x2="${geo.wallLength}" y2="${baseTopY + 12}" stroke="rgba(0,0,0,0.2)" stroke-width="1.5" />
+        </g>
+      `;
+
+      // Chair Rail / Dado Cap
+      const chairRailTopY = geo.wallHeight - geo.wainscotHeight;
+      if (geo.chairRailHeight > 0) {
+        markup += `
+          <g id="chair-rail-group">
+            <rect x="0" y="${chairRailTopY}" width="${geo.wallLength}" height="${geo.chairRailHeight}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+            <line x1="0" y1="${chairRailTopY + (geo.chairRailHeight * 0.4)}" x2="${geo.wallLength}" y2="${chairRailTopY + (geo.chairRailHeight * 0.4)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.5" />
+          </g>
+        `;
+      }
+
+      // Render Panels & Moulding
+      if (geo.isBoardAndBatten) {
+        // Top Rail under chair rail
+        const topRailH = geo.trimWidth;
+        const topRailY = chairRailTopY + geo.chairRailHeight;
+        markup += `
+          <rect x="0" y="${topRailY}" width="${geo.wallLength}" height="${topRailH}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" />
+        `;
+
+        // Vertical Battens (Stiles)
+        for (let b = 0; b <= geo.numPanels; b++) {
+          const battenX = b * (geo.panelWidth + geo.trimWidth);
+          const battenH = baseTopY - (topRailY + topRailH);
+          markup += `
+            <rect x="${battenX}" y="${topRailY + topRailH}" width="${geo.trimWidth}" height="${battenH}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} onmouseenter="showTooltip(evt, 'Batten #${b + 1}: ${formatLength(geo.trimWidth)} x ${formatLength(battenH)}')" onmouseleave="hideTooltip()" />
+          `;
+        }
+
+        // Horizontal Grid Rails if grid style
+        if (w.style === 'grid_batten') {
+          const rows = Math.max(1, w.gridRows);
+          const railW = w.gridRailWidth;
+          const availableSpan = baseTopY - (topRailY + topRailH);
+          const bayH = (availableSpan - (rows - 1) * railW) / rows;
+
+          for (let r = 1; r < rows; r++) {
+            const midRailY = (topRailY + topRailH) + (r * bayH) + ((r - 1) * railW);
+            for (let i = 0; i < geo.numPanels; i++) {
+              const bayX = (i * (geo.panelWidth + geo.trimWidth)) + geo.trimWidth;
+              markup += `
+                <rect x="${bayX}" y="${midRailY}" width="${geo.panelWidth}" height="${railW}" fill="${trimColor}" stroke="#334155" stroke-width="1" />
+              `;
+            }
+          }
+        }
+
+      } else {
+        // Picture Frame Mouldings (Single & Double)
+        geo.panels.forEach(p => {
+          // Convert floor-based Y to SVG Y (SVG 0 is ceiling)
+          const svgBoxY = geo.wallHeight - (p.y + p.height);
+
+          // Outer Box Frame
+          markup += `
+            <g id="${p.id}" class="moulding-box" onmouseenter="showTooltip(evt, '${p.id}: ${formatLength(p.width)} x ${formatLength(p.height)}')" onmouseleave="hideTooltip()">
+              <!-- Outer frame border with mitered look -->
+              <rect x="${p.x}" y="${svgBoxY}" width="${p.width}" height="${p.height}" fill="none" stroke="${trimColor}" stroke-width="${geo.trimWidth}" stroke-linejoin="miter" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+              
+              <!-- 45-degree miter corner joint lines -->
+              ${showShading ? `
+                <line x1="${p.x - geo.trimWidth/2}" y1="${svgBoxY - geo.trimWidth/2}" x2="${p.x + geo.trimWidth/2}" y2="${svgBoxY + geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+                <line x1="${p.x + p.width + geo.trimWidth/2}" y1="${svgBoxY - geo.trimWidth/2}" x2="${p.x + p.width - geo.trimWidth/2}" y2="${svgBoxY + geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+                <line x1="${p.x - geo.trimWidth/2}" y1="${svgBoxY + p.height + geo.trimWidth/2}" x2="${p.x + geo.trimWidth/2}" y2="${svgBoxY + p.height - geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+                <line x1="${p.x + p.width + geo.trimWidth/2}" y1="${svgBoxY + p.height + geo.trimWidth/2}" x2="${p.x + p.width - geo.trimWidth/2}" y2="${svgBoxY + p.height - geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+              ` : ''}
+          `;
+
+          // Double Inner Nested Frame
+          if (w.style === 'double_picture_frame') {
+            const innerOffset = geo.innerGap;
+            const innerW = p.width - (innerOffset * 2);
+            const innerH = p.height - (innerOffset * 2);
+            if (innerW > 40 && innerH > 40) {
+              const innerX = p.x + innerOffset;
+              const innerY = svgBoxY + innerOffset;
+              markup += `
+                <rect x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" fill="none" stroke="${trimColor}" stroke-width="${geo.trimWidth * 0.75}" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+              `;
+            }
+          }
+
+          markup += `</g>`;
+        });
+      }
+
+      // Render Obstacles (Doors, Windows, Outlets)
+      w.obstacles.forEach(obs => {
+        const obsSvgY = geo.wallHeight - (obs.y + obs.height);
+        markup += `
+          <g id="${obs.id}" class="obstacle-svg-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
+            <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="#334155" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2" rx="3" />
+            <!-- Receptacle holes detail -->
+            <circle cx="${obs.x + obs.width * 0.35}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="#64748b" />
+            <circle cx="${obs.x + obs.width * 0.65}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="#64748b" />
+            <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="#f59e0b" text-anchor="middle" font-weight="600">${obs.name}</text>
+          </g>
+        `;
+      });
+
+      // Render Architectural Dimension Strings
+      if (showDims) {
+        markup += renderDimensionsMarkup(geo, w);
+      }
+
+      svg.innerHTML = markup;
+    }
+
+    function renderDimensionsMarkup(geo, w) {
+      let d = '';
+      const fontSize = 12;
+      const font = 'system-ui, sans-serif';
+      const tickSize = 10;
+      const color = '#94a3b8';
+
+      // 1. Total Wall Length dimension string (Above Wall)
+      const topDimY = -60;
+      d += `
+        <g class="dim-string">
+          <line x1="0" y1="${topDimY}" x2="${geo.wallLength}" y2="${topDimY}" stroke="${color}" stroke-width="1.5" />
+          <line x1="0" y1="${topDimY - tickSize}" x2="0" y2="${topDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+          <line x1="${geo.wallLength}" y1="${topDimY - tickSize}" x2="${geo.wallLength}" y2="${topDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+          <rect x="${geo.wallLength/2 - 50}" y="${topDimY - 18}" width="100" height="18" fill="var(--bg-primary)" rx="3" />
+          <text x="${geo.wallLength/2}" y="${topDimY - 5}" font-size="${fontSize}" font-family="${font}" fill="#ffffff" text-anchor="middle" font-weight="600">
+            TOTAL: ${formatLength(geo.wallLength)}
+          </text>
+        </g>
+      `;
+
+      // 2. Individual Panels & Spacing dimension strings (Below Baseboard)
+      const botDimY = geo.wallHeight + 50;
+      d += `<g class="dim-string">`;
+
+      if (geo.isBoardAndBatten) {
+        // Battens and bays
+        for (let i = 0; i < geo.numPanels; i++) {
+          const bayX = (i * (geo.panelWidth + geo.trimWidth)) + geo.trimWidth;
+          d += `
+            <line x1="${bayX}" y1="${botDimY}" x2="${bayX + geo.panelWidth}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
+            <line x1="${bayX}" y1="${botDimY - tickSize}" x2="${bayX}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <line x1="${bayX + geo.panelWidth}" y1="${botDimY - tickSize}" x2="${bayX + geo.panelWidth}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <text x="${bayX + geo.panelWidth/2}" y="${botDimY + 20}" font-size="${fontSize - 1}" font-family="${font}" fill="#cbd5e1" text-anchor="middle">
+              ${formatLength(geo.panelWidth)}
+            </text>
+          `;
+        }
+      } else {
+        // Margins and Panels
+        // Left margin
+        if (geo.leftMargin > 0) {
+          d += `
+            <line x1="0" y1="${botDimY}" x2="${geo.leftMargin}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
+            <line x1="0" y1="${botDimY - tickSize}" x2="0" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <line x1="${geo.leftMargin}" y1="${botDimY - tickSize}" x2="${geo.leftMargin}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <text x="${geo.leftMargin/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="#cbd5e1" text-anchor="middle">
+              ${formatLength(geo.leftMargin)}
+            </text>
+          `;
+        }
+
+        // Each box & interior spacing
+        let curX = geo.leftMargin;
+        for (let i = 0; i < geo.numPanels; i++) {
+          // Panel width
+          d += `
+            <line x1="${curX}" y1="${botDimY}" x2="${curX + geo.panelWidth}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
+            <line x1="${curX}" y1="${botDimY - tickSize}" x2="${curX}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <line x1="${curX + geo.panelWidth}" y1="${botDimY - tickSize}" x2="${curX + geo.panelWidth}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <rect x="${curX + geo.panelWidth/2 - 35}" y="${botDimY - 14}" width="70" height="15" fill="var(--bg-primary)" rx="2" />
+            <text x="${curX + geo.panelWidth/2}" y="${botDimY - 2}" font-size="${fontSize}" font-family="${font}" fill="#ffffff" text-anchor="middle" font-weight="600">
+              ${formatLength(geo.panelWidth)}
+            </text>
+          `;
+
+          curX += geo.panelWidth;
+
+          // Gap to next panel
+          if (i < geo.numPanels - 1) {
+            d += `
+              <line x1="${curX}" y1="${botDimY}" x2="${curX + geo.spacing}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
+              <line x1="${curX + geo.spacing}" y1="${botDimY - tickSize}" x2="${curX + geo.spacing}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+              <text x="${curX + geo.spacing/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="#94a3b8" text-anchor="middle">
+                ${formatLength(geo.spacing)}
+              </text>
+            `;
+            curX += geo.spacing;
+          }
+        }
+
+        // Right margin
+        if (geo.rightMargin > 0) {
+          d += `
+            <line x1="${curX}" y1="${botDimY}" x2="${geo.wallLength}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
+            <line x1="${geo.wallLength}" y1="${botDimY - tickSize}" x2="${geo.wallLength}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
+            <text x="${curX + geo.rightMargin/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="#cbd5e1" text-anchor="middle">
+              ${formatLength(geo.rightMargin)}
+            </text>
+          `;
+        }
+      }
+
+      d += `</g>`;
+
+      // 3. Vertical Heights Dimension String (Left of Wall)
+      const leftDimX = -60;
+      const baseTopY = geo.wallHeight - geo.baseboardHeight;
+      const chairRailTopY = geo.wallHeight - geo.wainscotHeight;
+
+      d += `
+        <g class="dim-string">
+          <!-- Total Wainscot Height -->
+          <line x1="${leftDimX}" y1="${geo.wallHeight}" x2="${leftDimX}" y2="${chairRailTopY}" stroke="${color}" stroke-width="1.5" />
+          <line x1="${leftDimX - tickSize}" y1="${geo.wallHeight}" x2="${leftDimX + tickSize}" y2="${geo.wallHeight}" stroke="${color}" stroke-width="1.5" />
+          <line x1="${leftDimX - tickSize}" y1="${chairRailTopY}" x2="${leftDimX + tickSize}" y2="${chairRailTopY}" stroke="${color}" stroke-width="1.5" />
+          <text x="${leftDimX - 10}" y="${(geo.wallHeight + chairRailTopY)/2 + 4}" font-size="${fontSize}" font-family="${font}" fill="#ffffff" text-anchor="end" font-weight="600">
+            H: ${formatLength(geo.wainscotHeight)}
+          </text>
+          
+          <!-- Baseboard Height -->
+          <line x1="${leftDimX + 30}" y1="${geo.wallHeight}" x2="${leftDimX + 30}" y2="${baseTopY}" stroke="${color}" stroke-width="1" />
+          <line x1="${leftDimX + 25}" y1="${baseTopY}" x2="${leftDimX + 35}" y2="${baseTopY}" stroke="${color}" stroke-width="1" />
+          <text x="${leftDimX + 20}" y="${(geo.wallHeight + baseTopY)/2 + 3}" font-size="10" font-family="${font}" fill="#94a3b8" text-anchor="end">
+            Base ${formatLength(geo.baseboardHeight)}
+          </text>
+        </g>
+      `;
+
+      return d;
+    }
+
+    /* Cut List Generator */
+    function generateCutList(geo) {
+      const cuts = [];
+      const w = getActiveWall();
+      const style = w.style;
+      const isBoardAndBatten = geo.isBoardAndBatten;
+
+      if (isBoardAndBatten) {
+        // Vertical Battens
+        const topRailH = geo.trimWidth;
+        const battenH = geo.wainscotHeight - geo.baseboardHeight - geo.chairRailHeight - topRailH;
+        cuts.push({
+          tag: 'ST-VERT',
+          name: 'Vertical Stile (Batten)',
+          length: battenH,
+          width: geo.trimWidth,
+          cutType: '90° Square Cut Both Ends',
+          quantity: geo.numPanels + 1,
+          totalLinear: (geo.numPanels + 1) * battenH
+        });
+
+        // Top Rail
+        cuts.push({
+          tag: 'RL-TOP',
+          name: 'Top Rail (Horizontal Cap)',
+          length: geo.wallLength,
+          width: topRailH,
+          cutType: '90° Butt / Scarf Joint',
+          quantity: 1,
+          totalLinear: geo.wallLength
+        });
+
+        // Grid Cross-Rails if applicable
+        if (style === 'grid_batten') {
+          const rows = Math.max(1, w.gridRows);
+          const crossRailQty = geo.numPanels * (rows - 1);
+          if (crossRailQty > 0) {
+            cuts.push({
+              tag: 'RL-MID',
+              name: 'Grid Horizontal Cross Rail',
+              length: geo.panelWidth,
+              width: w.gridRailWidth,
+              cutType: '90° Square Cut Both Ends',
+              quantity: crossRailQty,
+              totalLinear: crossRailQty * geo.panelWidth
+            });
+          }
+        }
+
+        // Panel Infill Sheets (if Recessed or Raised)
+        if (style === 'recessed_shaker' || style === 'raised_panel') {
+          cuts.push({
+            tag: 'PNL-SHEET',
+            name: `${style === 'recessed_shaker' ? 'MDF/Plywood Recessed' : 'Raised'} Infill Panel`,
+            length: geo.panelWidth,
+            width: battenH,
+            cutType: '90° Table Saw Rip/Crosscut',
+            quantity: geo.numPanels,
+            totalLinear: geo.numPanels * (geo.panelWidth + battenH) * 2
+          });
+        }
+
+      } else {
+        // Picture Frame Mouldings
+        geo.panels.forEach(p => {
+          // Top & Bottom Pieces (45° Miter Cuts)
+          cuts.push({
+            tag: `${p.id}-H`,
+            name: `Box Frame Horizontals (${p.id})`,
+            length: p.width,
+            width: geo.trimWidth,
+            cutType: '45° Miter Both Ends',
+            quantity: 2,
+            totalLinear: 2 * p.width
+          });
+
+          // Left & Right Verticals (45° Miter Cuts)
+          cuts.push({
+            tag: `${p.id}-V`,
+            name: `Box Frame Verticals (${p.id})`,
+            length: p.height,
+            width: geo.trimWidth,
+            cutType: '45° Miter Both Ends',
+            quantity: 2,
+            totalLinear: 2 * p.height
+          });
+
+          // Double Inner Frame Pieces
+          if (w.style === 'double_picture_frame') {
+            const innerW = p.width - (geo.innerGap * 2);
+            const innerH = p.height - (geo.innerGap * 2);
+            if (innerW > 0 && innerH > 0) {
+              cuts.push({
+                tag: `${p.id}-IN-H`,
+                name: `Inner Nested Horizontals (${p.id})`,
+                length: innerW,
+                width: geo.trimWidth * 0.75,
+                cutType: '45° Miter Both Ends',
+                quantity: 2,
+                totalLinear: 2 * innerW
+              });
+              cuts.push({
+                tag: `${p.id}-IN-V`,
+                name: `Inner Nested Verticals (${p.id})`,
+                length: innerH,
+                width: geo.trimWidth * 0.75,
+                cutType: '45° Miter Both Ends',
+                quantity: 2,
+                totalLinear: 2 * innerH
+              });
+            }
+          }
+        });
+      }
+
+      // Chair Rail & Baseboard
+      if (geo.chairRailHeight > 0) {
+        cuts.push({
+          tag: 'CHR-RAIL',
+          name: 'Chair Rail (Dado Profile)',
+          length: geo.wallLength,
+          width: geo.chairRailHeight,
+          cutType: '90° / 45° Corner Miters',
+          quantity: 1,
+          totalLinear: geo.wallLength
+        });
+      }
+
+      if (geo.baseboardHeight > 0) {
+        cuts.push({
+          tag: 'BASE-BRD',
+          name: 'Baseboard Profile',
+          length: geo.wallLength,
+          width: geo.baseboardHeight,
+          cutType: '90° / 45° Corner Miters',
+          quantity: 1,
+          totalLinear: geo.wallLength
+        });
+      }
+
+      return cuts;
+    }
+
+    function renderCutListTable(cuts) {
+      const tbody = document.getElementById('cut-list-tbody');
+      tbody.innerHTML = '';
+
+      cuts.forEach(c => {
+        const tr = document.createElement('tr');
+        const badgeClass = c.cutType.includes('45°') ? 'badge-miter' : 'badge-butt';
+        tr.innerHTML = `
+          <td><strong>${c.tag}</strong></td>
+          <td>${c.name}</td>
+          <td>${formatLength(c.length)}</td>
+          <td>${formatLength(c.width)}</td>
+          <td><span class="badge ${badgeClass}">${c.cutType}</span></td>
+          <td>${c.quantity}</td>
+          <td>${formatLength(c.totalLinear)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* Cutting Stock Optimizer (1D Bin Packing with visualizer) */
+    function runStockOptimizer(cuts) {
+      const stockLength = parseFloat(document.getElementById('in-stock-board-length').value) || (state.unit === 'mm' ? 2400 : 96);
+      const kerf = parseFloat(document.getElementById('in-saw-kerf').value) || (state.unit === 'mm' ? 3 : 0.125);
+
+      // Extract all physical cuts into linear array
+      const flatCuts = [];
+      cuts.forEach(c => {
+        if (!c.tag.includes('PNL-SHEET') && !c.tag.includes('CHR-RAIL') && !c.tag.includes('BASE-BRD')) {
+          for (let i = 0; i < c.quantity; i++) {
+            flatCuts.push({
+              tag: c.tag,
+              length: c.length
+            });
+          }
+        }
+      });
+
+      // Sort descending (Best-fit decreasing)
+      flatCuts.sort((a, b) => b.length - a.length);
+
+      const boards = [];
+      flatCuts.forEach(cutObj => {
+        const cut = cutObj.length;
+        let bestBoard = -1;
+        let minRemainingAfter = Infinity;
+
+        for (let i = 0; i < boards.length; i++) {
+          const needed = boards[i].items.length > 0 ? cut + kerf : cut;
+          if (boards[i].remaining >= needed) {
+            const rem = boards[i].remaining - needed;
+            if (rem < minRemainingAfter) {
+              minRemainingAfter = rem;
+              bestBoard = i;
+            }
+          }
+        }
+
+        if (bestBoard !== -1) {
+          const needed = boards[bestBoard].items.length > 0 ? cut + kerf : cut;
+          boards[bestBoard].remaining -= needed;
+          boards[bestBoard].items.push(cutObj);
+        } else {
+          boards.push({
+            boardIndex: boards.length + 1,
+            remaining: stockLength - cut,
+            items: [cutObj]
+          });
+        }
+      });
+
+      const totalCutLength = flatCuts.reduce((acc, c) => acc + c.length, 0);
+      const totalStockUsed = boards.length * stockLength;
+      const wasteLength = totalStockUsed - totalCutLength;
+      const wastePct = totalStockUsed > 0 ? ((wasteLength / totalStockUsed) * 100).toFixed(1) : 0;
+
+      // Update Summary Header
+      document.getElementById('stock-summary-stats').innerHTML =
+        `Boards Needed: <strong>${boards.length}</strong> &bull; Total Linear: <strong>${formatLength(totalStockUsed)}</strong> &bull; Scrap / Waste: <strong>${wastePct}%</strong>`;
+
+      // Render Visualizer Cards
+      const container = document.getElementById('stock-board-visualizer');
+      container.innerHTML = '';
+
+      if (boards.length === 0) {
+        container.innerHTML = '<div style="font-size: 13px; color: var(--text-dim);">No moulding cuts required for current style.</div>';
+        return;
+      }
+
+      const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#4f46e5'];
+
+      boards.forEach((b, bIdx) => {
+        const card = document.createElement('div');
+        card.className = 'stock-board-card';
+
+        let segmentsMarkup = '';
+        b.items.forEach((item, itemIdx) => {
+          const pct = (item.length / stockLength) * 100;
+          const col = colors[(bIdx + itemIdx) % colors.length];
+          segmentsMarkup += `
+            <div class="cut-segment" style="width: ${pct}%; background-color: ${col};" title="${item.tag}: ${formatLength(item.length)}">
+              ${item.tag} (${formatLength(item.length, false)})
+            </div>
+          `;
+        });
+
+        // Remainder / scrap
+        if (b.remaining > 0) {
+          const wastePct = (b.remaining / stockLength) * 100;
+          segmentsMarkup += `
+            <div class="cut-segment waste" style="width: ${wastePct}%;" title="Scrap: ${formatLength(b.remaining)}">
+              Scrap ${formatLength(b.remaining, false)}
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="stock-board-meta">
+            <strong>Stock Board #${b.boardIndex} (${formatLength(stockLength)})</strong>
+            <span>${b.items.length} cut(s) &bull; Scrap: ${formatLength(b.remaining)}</span>
+          </div>
+          <div class="stock-board-bar">
+            ${segmentsMarkup}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    /* Hardware, Paint & Materials Estimator */
+    function calculateMaterialsAndCost(geo, cuts) {
+      const isMm = state.unit === 'mm';
+      const toMeters = isMm ? 1 / 1000 : 1 / 39.3701;
+      const toFeet = isMm ? 1 / 304.8 : 1 / 12;
+
+      // Total linear trim
+      let totalMouldingLinear = 0;
+      cuts.forEach(c => {
+        if (!c.tag.includes('CHR-RAIL') && !c.tag.includes('BASE-BRD') && !c.tag.includes('PNL-SHEET')) {
+          totalMouldingLinear += c.totalLinear;
+        }
+      });
+
+      const linearMeters = totalMouldingLinear * toMeters;
+      const linearFeet = totalMouldingLinear * toFeet;
+
+      // Brad nails count: approx 1 nail every 200mm (8 inches) + 2 nails per corner joint
+      const totalPieces = cuts.reduce((acc, c) => acc + c.quantity, 0);
+      const estNails = Math.round((linearMeters * 5) + (totalPieces * 4));
+
+      // Adhesive tubes: 1 standard 300ml tube per 8 linear meters (26 linear feet)
+      const adhesiveTubes = Math.max(1, Math.ceil(linearMeters / 8));
+
+      // Painter's Caulk: 1 tube covers ~15 linear meters of seams (each moulding piece has 2 edge seams!)
+      const totalSeamMeters = linearMeters * 2;
+      const caulkTubes = Math.max(1, Math.ceil(totalSeamMeters / 15));
+
+      // Wood filler / spackle: 1 small tub handles up to 500 nail holes
+      const woodFillerTubs = Math.max(1, Math.ceil(estNails / 500));
+
+      // Surface Area for Paint:
+      // Wainscot area = wallLength * wainscotHeight
+      const wallAreaSqM = (geo.wallLength * geo.wainscotHeight) / (1000 * 1000);
+      const wallAreaSqFt = wallAreaSqM * 10.7639;
+      // 2 coats of paint. 1 Liter covers ~10-12 sq meters per coat. (1 Gallon covers ~350-400 sq ft).
+      const paintLiters = ((wallAreaSqM * 2) / 10).toFixed(1);
+      const paintGallons = ((wallAreaSqFt * 2) / 350).toFixed(1);
+
+      // Render Supplies Grid
+      const grid = document.getElementById('materials-grid-container');
+      grid.innerHTML = `
+        <div class="material-card">
+          <div class="material-title">18-Gauge Brad Nails</div>
+          <div class="material-value">${estNails}</div>
+          <div class="material-detail">1.5" - 2" brad nails (~${Math.ceil(estNails / 1000)} box)</div>
+        </div>
+        <div class="material-card">
+          <div class="material-title">Construction Adhesive</div>
+          <div class="material-value">${adhesiveTubes} Tubes</div>
+          <div class="material-detail">Liquid Nails / Power Grab (300ml)</div>
+        </div>
+        <div class="material-card">
+          <div class="material-title">Painter's Caulk</div>
+          <div class="material-value">${caulkTubes} Tubes</div>
+          <div class="material-detail">Flexible latex sealant for seams</div>
+        </div>
+        <div class="material-card">
+          <div class="material-title">Wood Filler / Spackle</div>
+          <div class="material-value">${woodFillerTubs} Tub</div>
+          <div class="material-detail">Small tub for brad nail holes</div>
+        </div>
+        <div class="material-card">
+          <div class="material-title">Primer &amp; Paint</div>
+          <div class="material-value">${isMm ? paintLiters + ' Liters' : paintGallons + ' Gallons'}</div>
+          <div class="material-detail">Covers 2 coats over ${isMm ? wallAreaSqM.toFixed(1) + ' m²' : wallAreaSqFt.toFixed(1) + ' sq ft'}</div>
+        </div>
+        <div class="material-card">
+          <div class="material-title">Total Linear Moulding</div>
+          <div class="material-value">${formatLength(totalMouldingLinear)}</div>
+          <div class="material-detail">${linearMeters.toFixed(1)}m / ${linearFeet.toFixed(1)} ft</div>
+        </div>
+      `;
+
+      // Cost Calculation Table
+      const unitDist = isMm ? linearMeters : linearFeet;
+      const costMoulding = unitDist * state.unitPrices.mouldingPerUnit;
+      const costChairRail = (geo.chairRailHeight > 0 ? (geo.wallLength * (isMm ? toMeters : toFeet)) : 0) * state.unitPrices.chairRailPerUnit;
+      const costBaseboard = (geo.baseboardHeight > 0 ? (geo.wallLength * (isMm ? toMeters : toFeet)) : 0) * state.unitPrices.baseboardPerUnit;
+      const costAdhesive = adhesiveTubes * state.unitPrices.adhesiveTube;
+      const costCaulk = caulkTubes * state.unitPrices.caulkTube;
+      const costFiller = woodFillerTubs * state.unitPrices.fillerTub;
+      const costPaint = (isMm ? Math.ceil(paintLiters) : Math.ceil(paintGallons)) * state.unitPrices.paintPerUnit;
+      const costNails = Math.ceil(estNails / 1000) * state.unitPrices.nailsBox;
+
+      const totalProjectCost = (costMoulding + costChairRail + costBaseboard + costAdhesive + costCaulk + costFiller + costPaint + costNails).toFixed(2);
+
+      const costTbody = document.getElementById('cost-table-tbody');
+      costTbody.innerHTML = `
+        <tr>
+          <td>Moulding Trim Boards</td>
+          <td>${unitDist.toFixed(1)} ${isMm ? 'm' : 'ft'}</td>
+          <td><input type="number" step="0.5" value="${state.unitPrices.mouldingPerUnit}" style="width: 80px;" onchange="updatePrice('mouldingPerUnit', this.value)"></td>
+          <td>$${costMoulding.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Chair Rail Profile</td>
+          <td>${(geo.wallLength * (isMm ? toMeters : toFeet)).toFixed(1)} ${isMm ? 'm' : 'ft'}</td>
+          <td><input type="number" step="0.5" value="${state.unitPrices.chairRailPerUnit}" style="width: 80px;" onchange="updatePrice('chairRailPerUnit', this.value)"></td>
+          <td>$${costChairRail.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Baseboard Trim</td>
+          <td>${(geo.wallLength * (isMm ? toMeters : toFeet)).toFixed(1)} ${isMm ? 'm' : 'ft'}</td>
+          <td><input type="number" step="0.5" value="${state.unitPrices.baseboardPerUnit}" style="width: 80px;" onchange="updatePrice('baseboardPerUnit', this.value)"></td>
+          <td>$${costBaseboard.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Construction Adhesive</td>
+          <td>${adhesiveTubes} tubes</td>
+          <td><input type="number" step="0.5" value="${state.unitPrices.adhesiveTube}" style="width: 80px;" onchange="updatePrice('adhesiveTube', this.value)"></td>
+          <td>$${costAdhesive.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Painter's Caulk</td>
+          <td>${caulkTubes} tubes</td>
+          <td><input type="number" step="0.5" value="${state.unitPrices.caulkTube}" style="width: 80px;" onchange="updatePrice('caulkTube', this.value)"></td>
+          <td>$${costCaulk.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Brad Nails (Box of 1,000)</td>
+          <td>${Math.ceil(estNails / 1000)} box</td>
+          <td><input type="number" step="0.5" value="${state.unitPrices.nailsBox}" style="width: 80px;" onchange="updatePrice('nailsBox', this.value)"></td>
+          <td>$${costNails.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Paint &amp; Primer</td>
+          <td>${isMm ? Math.ceil(paintLiters) + ' L' : Math.ceil(paintGallons) + ' Gal'}</td>
+          <td><input type="number" step="1" value="${state.unitPrices.paintPerUnit}" style="width: 80px;" onchange="updatePrice('paintPerUnit', this.value)"></td>
+          <td>$${costPaint.toFixed(2)}</td>
+        </tr>
+        <tr class="cost-total-row">
+          <td colspan="3">Estimated Total Project Material Cost</td>
+          <td>$${totalProjectCost}</td>
+        </tr>
+      `;
+    }
+
+    function updatePrice(key, val) {
+      state.unitPrices[key] = parseFloat(val) || 0;
+      updateCalculation();
+    }
+
+    /* Full Refresh Cycle */
+    function updateCalculation() {
+      const geo = calculateWallGeometry();
+      renderElevation();
+      const cuts = generateCutList(geo);
+      renderCutListTable(cuts);
+      runStockOptimizer(cuts);
+      calculateMaterialsAndCost(geo, cuts);
+    }
+
+    /* Drawer Tab Switching */
+    function setDrawerTab(tabId) {
+      document.querySelectorAll('.drawer-tab').forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-tab') === tabId);
+      });
+      document.querySelectorAll('.drawer-content').forEach(c => {
+        c.style.display = c.id === `tab-content-${tabId}` ? 'block' : 'none';
+      });
+    }
+
+    /* Tooltip */
+    function showTooltip(evt, text) {
+      const tt = document.getElementById('designer-tooltip');
+      tt.textContent = text;
+      tt.style.display = 'block';
+      const wrapperRect = document.getElementById('canvas-wrapper').getBoundingClientRect();
+      tt.style.left = (evt.clientX - wrapperRect.left + 14) + 'px';
+      tt.style.top = (evt.clientY - wrapperRect.top + 14) + 'px';
+    }
+
+    function hideTooltip() {
+      document.getElementById('designer-tooltip').style.display = 'none';
+    }
+
+    function dismissConflictAlert() {
+      document.getElementById('conflict-alert').style.display = 'none';
+    }
+
+    /* Canvas Zoom Controls */
+    function zoomCanvas(factor) {
+      state.zoomLevel *= factor;
+      const svg = document.getElementById('elevation-svg');
+      svg.style.transform = `scale(${state.zoomLevel})`;
+      svg.style.transformOrigin = 'center center';
+    }
+
+    function resetCanvasZoom() {
+      state.zoomLevel = 1.0;
+      const svg = document.getElementById('elevation-svg');
+      svg.style.transform = 'scale(1.0)';
+    }
+
+    /* CSV Export */
+    function exportCSV() {
+      const geo = calculateWallGeometry();
+      const cuts = generateCutList(geo);
+      let csv = 'Piece Tag,Component,Length (' + state.unit + '),Width (' + state.unit + '),Joint Cut,Quantity,Total Linear (' + state.unit + ')\n';
+      cuts.forEach(c => {
+        csv += `"${c.tag}","${c.name}",${c.length},${c.width},"${c.cutType}",${c.quantity},${c.totalLinear}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wainscot-cut-list-${state.walls[state.currentWallIndex].name.toLowerCase().replace(/\\s+/g, '-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /* JSON Project Export / Import */
+    function exportProjectJSON() {
+      const jsonStr = JSON.stringify(state, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wainscot-project.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function importProjectJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const loaded = JSON.parse(e.target.result);
+          if (loaded.walls && Array.isArray(loaded.walls)) {
+            Object.assign(state, loaded);
+            syncInputsFromState();
+            setUnit(state.unit);
+            updateCalculation();
+          }
+        } catch (err) {
+          alert('Invalid project JSON file');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Initialize application on DOM load
+    window.addEventListener('DOMContentLoaded', () => {
+      syncInputsFromState();
+      updateCalculation();
+    });
+  </script>
+</body>
+</html>
