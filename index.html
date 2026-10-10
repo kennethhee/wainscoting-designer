@@ -1054,18 +1054,20 @@
         </div>
       </div>
 
-      <!-- Aesthetics & Display Options -->
+      <!-- Aesthetics & Finishes -->
       <div class="sidebar-section">
         <div class="section-header">
-          <span>Appearance &amp; Colors</span>
+          <span>Appearance &amp; Finishes</span>
+          <button class="btn btn-sm" onclick="applyColourDrench()" title="Apply Dulux Colour Drench: Antique White U.S.A. Low Sheen Wall &amp; Semi-Gloss Trim" style="background: #f4efe6; color: #43382c; border: 1px solid #d4cab9; font-weight: 600; font-size: 11px;">Dulux Colour Drench</button>
         </div>
         <div class="section-body">
           <div class="form-row">
             <div class="form-group">
               <label>Wall Paint Color</label>
-              <select id="in-wall-color" onchange="renderElevation()">
+              <select id="in-wall-color" onchange="onColorOrSheenChange()">
+                <option value="#f4efe6" selected>Dulux Antique White U.S.A. (#f4efe6)</option>
                 <option value="#f8fafc">Pure White (#f8fafc)</option>
-                <option value="#f1f5f9" selected>Off White (#f1f5f9)</option>
+                <option value="#f1f5f9">Off White (#f1f5f9)</option>
                 <option value="#fdfbf7">Warm Cream (#fdfbf7)</option>
                 <option value="#e2e8f0">Light Grey (#e2e8f0)</option>
                 <option value="#e0e7ff">Soft Coastal Mist (#e0e7ff)</option>
@@ -1075,14 +1077,35 @@
               </select>
             </div>
             <div class="form-group">
+              <label>Wall Sheen Level</label>
+              <select id="in-wall-sheen" onchange="onColorOrSheenChange()">
+                <option value="low_sheen" selected>Low Sheen (Wash&amp;Wear)</option>
+                <option value="matt">Matt (Ultra Flat)</option>
+                <option value="semi_gloss">Semi-Gloss</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
               <label>Moulding / Trim Color</label>
-              <select id="in-trim-color" onchange="renderElevation()">
-                <option value="#ffffff" selected>Bright White (#ffffff)</option>
+              <select id="in-trim-color" onchange="onColorOrSheenChange()">
+                <option value="#f4efe6" selected>Dulux Antique White U.S.A. (#f4efe6)</option>
+                <option value="#ffffff">Bright White (#ffffff)</option>
                 <option value="#f8fafc">Alabaster White (#f8fafc)</option>
                 <option value="#f5efe6">Warm Linen (#f5efe6)</option>
                 <option value="#e2e8f0">Soft Grey Trim (#e2e8f0)</option>
                 <option value="#334155">Navy Trim (#334155)</option>
                 <option value="#1e293b">Charcoal Trim (#1e293b)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Trim Sheen Level</label>
+              <select id="in-trim-sheen" onchange="onColorOrSheenChange()">
+                <option value="semi_gloss" selected>Semi-Gloss (Aquanamel)</option>
+                <option value="gloss">Gloss (High Lustre)</option>
+                <option value="satin">Satin</option>
+                <option value="low_sheen">Low Sheen</option>
               </select>
             </div>
           </div>
@@ -1096,7 +1119,7 @@
             </div>
             <div class="form-group">
               <label style="cursor: pointer;">
-                <span>Realistic Shading &amp; Miters</span>
+                <span>Sheen Highlights &amp; Bevels</span>
                 <input type="checkbox" id="in-show-shading" checked onchange="renderElevation()">
               </label>
             </div>
@@ -1243,6 +1266,10 @@
           baseboardHeight: 140,
           chairRailHeight: 65,
           style: 'picture_frame',
+          wallColor: '#f4efe6',
+          wallSheen: 'low_sheen',
+          trimColor: '#f4efe6',
+          trimSheen: 'semi_gloss',
           trimWidth: 40,
           innerGap: 60,
           gridRows: 2,
@@ -1279,7 +1306,9 @@
         adhesiveTube: 8.5,
         caulkTube: 6.0,
         fillerTub: 9.0,
-        paintPerUnit: 35.0,
+        wallPaintPerUnit: 38.0, // Dulux Wash&Wear Low Sheen per unit
+        trimPaintPerUnit: 44.0, // Dulux Aquanamel Semi-Gloss per unit
+        paintPerUnit: 38.0,
         nailsBox: 12.0
       }
     };
@@ -1375,6 +1404,14 @@
       document.getElementById('in-baseboard-height').value = w.baseboardHeight;
       document.getElementById('in-chair-rail-height').value = w.chairRailHeight;
       document.getElementById('in-wainscot-style').value = w.style;
+      const wallColorEl = document.getElementById('in-wall-color');
+      if (wallColorEl) wallColorEl.value = w.wallColor || '#f4efe6';
+      const wallSheenEl = document.getElementById('in-wall-sheen');
+      if (wallSheenEl) wallSheenEl.value = w.wallSheen || 'low_sheen';
+      const trimColorEl = document.getElementById('in-trim-color');
+      if (trimColorEl) trimColorEl.value = w.trimColor || '#f4efe6';
+      const trimSheenEl = document.getElementById('in-trim-sheen');
+      if (trimSheenEl) trimSheenEl.value = w.trimSheen || 'semi_gloss';
       document.getElementById('in-trim-width').value = w.trimWidth;
       document.getElementById('in-inner-gap').value = w.innerGap;
       document.getElementById('in-grid-rows').value = w.gridRows;
@@ -1408,6 +1445,14 @@
       w.baseboardHeight = parseFloat(document.getElementById('in-baseboard-height').value) || 0;
       w.chairRailHeight = parseFloat(document.getElementById('in-chair-rail-height').value) || 0;
       w.style = document.getElementById('in-wainscot-style').value;
+      const wallColorEl = document.getElementById('in-wall-color');
+      if (wallColorEl) w.wallColor = wallColorEl.value;
+      const wallSheenEl = document.getElementById('in-wall-sheen');
+      if (wallSheenEl) w.wallSheen = wallSheenEl.value;
+      const trimColorEl = document.getElementById('in-trim-color');
+      if (trimColorEl) w.trimColor = trimColorEl.value;
+      const trimSheenEl = document.getElementById('in-trim-sheen');
+      if (trimSheenEl) w.trimSheen = trimSheenEl.value;
       w.trimWidth = parseFloat(document.getElementById('in-trim-width').value) || 20;
       w.innerGap = parseFloat(document.getElementById('in-inner-gap').value) || 40;
       w.gridRows = parseInt(document.getElementById('in-grid-rows').value, 10) || 1;
@@ -1423,6 +1468,28 @@
       w.twoTier = document.getElementById('in-two-tier').checked;
       w.tierRatio = parseFloat(document.getElementById('in-tier-ratio').value) || 0.35;
       w.tierGap = parseFloat(document.getElementById('in-tier-gap').value) || 50;
+    }
+
+    function onColorOrSheenChange() {
+      syncStateFromInputs();
+      updateCalculation();
+    }
+
+    function applyColourDrench() {
+      const w = getActiveWall();
+      w.wallColor = '#f4efe6';
+      w.wallSheen = 'low_sheen';
+      w.trimColor = '#f4efe6';
+      w.trimSheen = 'semi_gloss';
+      const wc = document.getElementById('in-wall-color');
+      if (wc) wc.value = '#f4efe6';
+      const ws = document.getElementById('in-wall-sheen');
+      if (ws) ws.value = 'low_sheen';
+      const tc = document.getElementById('in-trim-color');
+      if (tc) tc.value = '#f4efe6';
+      const ts = document.getElementById('in-trim-sheen');
+      if (ts) ts.value = 'semi_gloss';
+      updateCalculation();
     }
 
     function onStyleChange() {
@@ -1920,11 +1987,17 @@
       const showShading = document.getElementById('in-show-shading').checked;
       const wallColor = document.getElementById('in-wall-color').value;
       const trimColor = document.getElementById('in-trim-color').value;
+      const wallSheen = (document.getElementById('in-wall-sheen') && document.getElementById('in-wall-sheen').value) || (w.wallSheen || 'low_sheen');
+      const trimSheen = (document.getElementById('in-trim-sheen') && document.getElementById('in-trim-sheen').value) || (w.trimSheen || 'semi_gloss');
+      const isColourDrench = wallColor.toLowerCase() === trimColor.toLowerCase();
+      const isSemiGlossOrGloss = trimSheen === 'semi_gloss' || trimSheen === 'gloss';
+      const highlightOpacity = trimSheen === 'gloss' ? '0.90' : (trimSheen === 'semi_gloss' ? '0.72' : (trimSheen === 'satin' ? '0.45' : '0.25'));
+      const shadowStrokeOpacity = isSemiGlossOrGloss ? '0.28' : '0.15';
 
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const wallStroke = isDark ? '#475569' : '#cbd5e1';
-      const trimStroke = isDark ? '#334155' : '#64748b';
-      const shadowOpacity = isDark ? '0.35' : '0.12';
+      const trimStroke = isDark ? '#334155' : (isColourDrench ? '#d6cbba' : '#64748b');
+      const shadowOpacity = isDark ? '0.35' : (isColourDrench ? '0.22' : '0.14');
 
       // Conflict alert badge
       const conflictAlert = document.getElementById('conflict-alert');
@@ -1940,7 +2013,8 @@
       const titleEl = document.getElementById('canvas-wall-title');
       if (titleEl) titleEl.textContent = `${w.name} Elevation`;
       document.getElementById('canvas-summary-text').innerHTML =
-        `${geo.numPanels} ${geo.isBoardAndBatten ? 'Bays' : 'Panels'} &bull; Width: <strong>${formatLength(geo.panelWidth)}</strong> &bull; Gap: <strong>${formatLength(geo.spacing)}</strong>`;
+        `${geo.numPanels} ${geo.isBoardAndBatten ? 'Bays' : 'Panels'} &bull; Width: <strong>${formatLength(geo.panelWidth)}</strong> &bull; Gap: <strong>${formatLength(geo.spacing)}</strong>` +
+        (isColourDrench ? ` &bull; <span style="color: #b45309; font-weight: 600;">Colour Drench: ${wallSheen === 'low_sheen' ? 'Low Sheen' : wallSheen} Wall + ${trimSheen === 'semi_gloss' ? 'Semi-Gloss' : trimSheen} Trim</span>` : '');
 
       // Coordinate viewport setup
       const padX = showDims ? 160 : 60;
@@ -1984,6 +2058,11 @@
           <rect x="0" y="${baseTopY}" width="${geo.wallLength}" height="${geo.baseboardHeight}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
           <!-- Base cap line -->
           <line x1="0" y1="${baseTopY + 12}" x2="${geo.wallLength}" y2="${baseTopY + 12}" stroke="rgba(0,0,0,0.2)" stroke-width="1.5" />
+          ${showShading ? `
+            <!-- Specular top edge highlight -->
+            <line x1="0" y1="${baseTopY + 1}" x2="${geo.wallLength}" y2="${baseTopY + 1}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1.5" />
+            <line x1="0" y1="${baseTopY + 13}" x2="${geo.wallLength}" y2="${baseTopY + 13}" stroke="rgba(255,255,255,${parseFloat(highlightOpacity)*0.7})" stroke-width="1" />
+          ` : ''}
         </g>
       `;
 
@@ -1994,6 +2073,13 @@
           <g id="chair-rail-group">
             <rect x="0" y="${chairRailTopY}" width="${geo.wallLength}" height="${geo.chairRailHeight}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
             <line x1="0" y1="${chairRailTopY + (geo.chairRailHeight * 0.4)}" x2="${geo.wallLength}" y2="${chairRailTopY + (geo.chairRailHeight * 0.4)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.5" />
+            ${showShading ? `
+              <!-- Specular highlight along top rail edge -->
+              <line x1="0" y1="${chairRailTopY + 1}" x2="${geo.wallLength}" y2="${chairRailTopY + 1}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1.5" />
+              <line x1="0" y1="${chairRailTopY + (geo.chairRailHeight * 0.4) + 1}" x2="${geo.wallLength}" y2="${chairRailTopY + (geo.chairRailHeight * 0.4) + 1}" stroke="rgba(255,255,255,${parseFloat(highlightOpacity)*0.75})" stroke-width="1" />
+              <!-- Bottom shadow line -->
+              <line x1="0" y1="${chairRailTopY + geo.chairRailHeight}" x2="${geo.wallLength}" y2="${chairRailTopY + geo.chairRailHeight}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="1.5" />
+            ` : ''}
           </g>
         `;
       }
@@ -2005,6 +2091,10 @@
         const topRailY = chairRailTopY + geo.chairRailHeight;
         markup += `
           <rect x="0" y="${topRailY}" width="${geo.wallLength}" height="${topRailH}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" />
+          ${showShading ? `
+            <line x1="0" y1="${topRailY + 1}" x2="${geo.wallLength}" y2="${topRailY + 1}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1.5" />
+            <line x1="0" y1="${topRailY + topRailH}" x2="${geo.wallLength}" y2="${topRailY + topRailH}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="1.5" />
+          ` : ''}
         `;
 
         // Vertical Battens (Stiles)
@@ -2013,6 +2103,12 @@
           const battenH = baseTopY - (topRailY + topRailH);
           markup += `
             <rect x="${battenX}" y="${topRailY + topRailH}" width="${geo.trimWidth}" height="${battenH}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} onmouseenter="showTooltip(evt, 'Batten #${b + 1}: ${formatLength(geo.trimWidth)} x ${formatLength(battenH)}')" onmouseleave="hideTooltip()" />
+            ${showShading ? `
+              <!-- Left specular highlight on batten -->
+              <line x1="${battenX + 1}" y1="${topRailY + topRailH}" x2="${battenX + 1}" y2="${baseTopY}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1.5" />
+              <!-- Right shadow line on batten -->
+              <line x1="${battenX + geo.trimWidth}" y1="${topRailY + topRailH}" x2="${battenX + geo.trimWidth}" y2="${baseTopY}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="1.5" />
+            ` : ''}
           `;
         }
 
@@ -2029,6 +2125,10 @@
               const bayX = (i * (geo.panelWidth + geo.trimWidth)) + geo.trimWidth;
               markup += `
                 <rect x="${bayX}" y="${midRailY}" width="${geo.panelWidth}" height="${railW}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1" />
+                ${showShading ? `
+                  <line x1="${bayX}" y1="${midRailY + 1}" x2="${bayX + geo.panelWidth}" y2="${midRailY + 1}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1" />
+                  <line x1="${bayX}" y1="${midRailY + railW}" x2="${bayX + geo.panelWidth}" y2="${midRailY + railW}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="1" />
+                ` : ''}
               `;
             }
           }
@@ -2046,12 +2146,19 @@
               <!-- Outer frame border with mitered look -->
               <rect x="${p.x}" y="${svgBoxY}" width="${p.width}" height="${p.height}" fill="none" stroke="${trimColor}" stroke-width="${geo.trimWidth}" stroke-linejoin="miter" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
               
-              <!-- 45-degree miter corner joint lines -->
+              <!-- 45-degree miter corner joint lines & specular highlights -->
               ${showShading ? `
                 <line x1="${p.x - geo.trimWidth/2}" y1="${svgBoxY - geo.trimWidth/2}" x2="${p.x + geo.trimWidth/2}" y2="${svgBoxY + geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
                 <line x1="${p.x + p.width + geo.trimWidth/2}" y1="${svgBoxY - geo.trimWidth/2}" x2="${p.x + p.width - geo.trimWidth/2}" y2="${svgBoxY + geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
                 <line x1="${p.x - geo.trimWidth/2}" y1="${svgBoxY + p.height + geo.trimWidth/2}" x2="${p.x + geo.trimWidth/2}" y2="${svgBoxY + p.height - geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
                 <line x1="${p.x + p.width + geo.trimWidth/2}" y1="${svgBoxY + p.height + geo.trimWidth/2}" x2="${p.x + p.width - geo.trimWidth/2}" y2="${svgBoxY + p.height - geo.trimWidth/2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+                
+                <!-- Specular highlights for semi-gloss / gloss trim -->
+                <line x1="${p.x - geo.trimWidth/2 + 2}" y1="${svgBoxY - geo.trimWidth/2 + 1}" x2="${p.x + p.width + geo.trimWidth/2 - 2}" y2="${svgBoxY - geo.trimWidth/2 + 1}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1.5" />
+                <line x1="${p.x - geo.trimWidth/2 + 1}" y1="${svgBoxY - geo.trimWidth/2 + 2}" x2="${p.x - geo.trimWidth/2 + 1}" y2="${svgBoxY + p.height + geo.trimWidth/2 - 2}" stroke="rgba(255,255,255,${parseFloat(highlightOpacity)*0.75})" stroke-width="1.5" />
+                <!-- Subtle bottom and right bevel shadows -->
+                <line x1="${p.x - geo.trimWidth/2}" y1="${svgBoxY + p.height + geo.trimWidth/2}" x2="${p.x + p.width + geo.trimWidth/2}" y2="${svgBoxY + p.height + geo.trimWidth/2}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="1.5" />
+                <line x1="${p.x + p.width + geo.trimWidth/2}" y1="${svgBoxY - geo.trimWidth/2}" x2="${p.x + p.width + geo.trimWidth/2}" y2="${svgBoxY + p.height + geo.trimWidth/2}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="1.5" />
               ` : ''}
           `;
 
@@ -2063,8 +2170,15 @@
             if (innerW > 40 && innerH > 40) {
               const innerX = p.x + innerOffset;
               const innerY = svgBoxY + innerOffset;
+              const innerTrimW = geo.trimWidth * 0.75;
               markup += `
-                <rect x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" fill="none" stroke="${trimColor}" stroke-width="${geo.trimWidth * 0.75}" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+                <rect x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" fill="none" stroke="${trimColor}" stroke-width="${innerTrimW}" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+                ${showShading ? `
+                  <line x1="${innerX - innerTrimW/2}" y1="${innerY - innerTrimW/2}" x2="${innerX + innerTrimW/2}" y2="${innerY + innerTrimW/2}" stroke="rgba(0,0,0,0.3)" stroke-width="1" />
+                  <line x1="${innerX + innerW + innerTrimW/2}" y1="${innerY - innerTrimW/2}" x2="${innerX + innerW - innerTrimW/2}" y2="${innerY + innerTrimW/2}" stroke="rgba(0,0,0,0.3)" stroke-width="1" />
+                  <line x1="${innerX - innerTrimW/2 + 1}" y1="${innerY - innerTrimW/2 + 1}" x2="${innerX + innerW + innerTrimW/2 - 1}" y2="${innerY - innerTrimW/2 + 1}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1" />
+                  <line x1="${innerX - innerTrimW/2 + 1}" y1="${innerY - innerTrimW/2 + 1}" x2="${innerX - innerTrimW/2 + 1}" y2="${innerY + innerH + innerTrimW/2 - 1}" stroke="rgba(255,255,255,${parseFloat(highlightOpacity)*0.75})" stroke-width="1" />
+                ` : ''}
               `;
             }
           }
@@ -2530,13 +2644,28 @@
       // Wood filler / spackle: 1 small tub handles up to 500 nail holes
       const woodFillerTubs = Math.max(1, Math.ceil(estNails / 500));
 
-      // Surface Area for Paint:
-      // Wainscot area = wallLength * wainscotHeight
+      // Surface Area & Linear Footage for Paint:
       const wallAreaSqM = (geo.wallLength * geo.wainscotHeight) / (1000 * 1000);
       const wallAreaSqFt = wallAreaSqM * 10.7639;
-      // 2 coats of paint. 1 Liter covers ~10-12 sq meters per coat. (1 Gallon covers ~350-400 sq ft).
-      const paintLiters = ((wallAreaSqM * 2) / 10).toFixed(1);
-      const paintGallons = ((wallAreaSqFt * 2) / 350).toFixed(1);
+      // Wall Paint (Dulux Wash&Wear Low Sheen): 2 coats (~11 m²/L or ~380 sq ft/gal)
+      const wallPaintLiters = Math.max(1, ((wallAreaSqM * 2) / 11)).toFixed(1);
+      const wallPaintGallons = Math.max(0.25, ((wallAreaSqFt * 2) / 380)).toFixed(1);
+
+      // Trim Enamel (Dulux Aquanamel Semi-Gloss):
+      // Covers all moulding profiles + chair rail + baseboard
+      const totalTrimLinear = totalMouldingLinear + 
+        (geo.chairRailHeight > 0 ? geo.wallLength : 0) + 
+        (geo.baseboardHeight > 0 ? geo.wallLength : 0);
+      const trimMeters = totalTrimLinear * toMeters;
+      const trimFeet = totalTrimLinear * toFeet;
+      // Aquanamel coverage: 2 coats over narrow trim boards (~12-14 linear meters per Liter)
+      const trimPaintLiters = Math.max(0.5, (trimMeters / 12)).toFixed(1);
+      const trimPaintGallons = Math.max(0.2, (trimFeet / 40)).toFixed(1);
+
+      const isAntiqueWhite = (w.wallColor === '#f4efe6' && w.trimColor === '#f4efe6');
+      const wallPaintName = isAntiqueWhite ? 'Dulux Wash&Wear Low Sheen' : 'Wall Paint (Low Sheen)';
+      const trimPaintName = isAntiqueWhite ? 'Dulux Aquanamel Semi-Gloss' : 'Trim Enamel (Semi-Gloss)';
+      const colorSubtitle = isAntiqueWhite ? 'Antique White U.S.A.' : 'Custom Finish';
 
       // Render Supplies Grid
       const grid = document.getElementById('materials-grid-container');
@@ -2562,9 +2691,14 @@
           <div class="material-detail">Small tub for brad nail holes</div>
         </div>
         <div class="material-card">
-          <div class="material-title">Primer &amp; Paint</div>
-          <div class="material-value">${isMm ? paintLiters + ' Liters' : paintGallons + ' Gallons'}</div>
-          <div class="material-detail">Covers 2 coats over ${isMm ? wallAreaSqM.toFixed(1) + ' m²' : wallAreaSqFt.toFixed(1) + ' sq ft'}</div>
+          <div class="material-title">${wallPaintName}</div>
+          <div class="material-value">${isMm ? wallPaintLiters + ' L' : wallPaintGallons + ' Gal'}</div>
+          <div class="material-detail">Walls (${colorSubtitle} • 2 coats • ${isMm ? wallAreaSqM.toFixed(1) + ' m²' : wallAreaSqFt.toFixed(1) + ' sq ft'})</div>
+        </div>
+        <div class="material-card">
+          <div class="material-title">${trimPaintName}</div>
+          <div class="material-value">${isMm ? trimPaintLiters + ' L' : trimPaintGallons + ' Gal'}</div>
+          <div class="material-detail">Trims (${colorSubtitle} • 2 coats • ${trimMeters.toFixed(1)}m linear)</div>
         </div>
         <div class="material-card">
           <div class="material-title">Total Linear Moulding</div>
@@ -2581,10 +2715,11 @@
       const costAdhesive = adhesiveTubes * state.unitPrices.adhesiveTube;
       const costCaulk = caulkTubes * state.unitPrices.caulkTube;
       const costFiller = woodFillerTubs * state.unitPrices.fillerTub;
-      const costPaint = (isMm ? Math.ceil(paintLiters) : Math.ceil(paintGallons)) * state.unitPrices.paintPerUnit;
+      const costWallPaint = (isMm ? Math.ceil(parseFloat(wallPaintLiters)) : Math.ceil(parseFloat(wallPaintGallons))) * (state.unitPrices.wallPaintPerUnit || 38.0);
+      const costTrimPaint = (isMm ? Math.ceil(parseFloat(trimPaintLiters)) : Math.ceil(parseFloat(trimPaintGallons))) * (state.unitPrices.trimPaintPerUnit || 44.0);
       const costNails = Math.ceil(estNails / 1000) * state.unitPrices.nailsBox;
 
-      const totalProjectCost = (costMoulding + costChairRail + costBaseboard + costAdhesive + costCaulk + costFiller + costPaint + costNails).toFixed(2);
+      const totalProjectCost = (costMoulding + costChairRail + costBaseboard + costAdhesive + costCaulk + costFiller + costWallPaint + costTrimPaint + costNails).toFixed(2);
 
       const costTbody = document.getElementById('cost-table-tbody');
       costTbody.innerHTML = `
@@ -2625,10 +2760,16 @@
           <td>$${costNails.toFixed(2)}</td>
         </tr>
         <tr>
-          <td>Paint &amp; Primer</td>
-          <td>${isMm ? Math.ceil(paintLiters) + ' L' : Math.ceil(paintGallons) + ' Gal'}</td>
-          <td><input type="number" step="1" value="${state.unitPrices.paintPerUnit}" style="width: 80px;" onchange="updatePrice('paintPerUnit', this.value)"></td>
-          <td>$${costPaint.toFixed(2)}</td>
+          <td>${wallPaintName} (${colorSubtitle})</td>
+          <td>${isMm ? Math.ceil(parseFloat(wallPaintLiters)) + ' L' : Math.ceil(parseFloat(wallPaintGallons)) + ' Gal'}</td>
+          <td><input type="number" step="1" value="${state.unitPrices.wallPaintPerUnit || 38.0}" style="width: 80px;" onchange="updatePrice('wallPaintPerUnit', this.value)"></td>
+          <td>$${costWallPaint.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>${trimPaintName} (${colorSubtitle})</td>
+          <td>${isMm ? Math.ceil(parseFloat(trimPaintLiters)) + ' L' : Math.ceil(parseFloat(trimPaintGallons)) + ' Gal'}</td>
+          <td><input type="number" step="1" value="${state.unitPrices.trimPaintPerUnit || 44.0}" style="width: 80px;" onchange="updatePrice('trimPaintPerUnit', this.value)"></td>
+          <td>$${costTrimPaint.toFixed(2)}</td>
         </tr>
         <tr class="cost-total-row">
           <td colspan="3">Estimated Total Project Material Cost</td>
