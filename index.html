@@ -835,6 +835,11 @@
           <span>Wall &amp; Wainscot Dimensions</span>
         </div>
         <div class="section-body">
+          <div class="form-group">
+            <label>Wall Name / Label</label>
+            <input type="text" id="in-wall-name" value="Wall 1 (Main)" placeholder="e.g. North Wall / Dining Room" oninput="onWallNameChange(this.value)">
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Wall Length <span class="label-hint" id="wall-len-unit-lbl">(mm)</span></label>
@@ -1113,7 +1118,7 @@
       <!-- Canvas Toolbar -->
       <div class="canvas-toolbar">
         <div class="toolbar-group">
-          <strong>Wall Elevation View</strong>
+          <strong id="canvas-wall-title">Wall 1 (Main) Elevation</strong>
           <span style="color: var(--text-dim);">|</span>
           <span id="canvas-summary-text" style="color: var(--text-muted);">4 Panels &bull; Spacing: 100mm &bull; Box Width: 775mm</span>
         </div>
@@ -1362,6 +1367,8 @@
 
     function syncInputsFromState() {
       const w = getActiveWall();
+      const nameInput = document.getElementById('in-wall-name');
+      if (nameInput) nameInput.value = w.name;
       document.getElementById('in-wall-length').value = w.wallLength;
       document.getElementById('in-wall-height').value = w.wallHeight;
       document.getElementById('in-wainscot-height').value = w.wainscotHeight;
@@ -1393,6 +1400,8 @@
 
     function syncStateFromInputs() {
       const w = getActiveWall();
+      const nameInput = document.getElementById('in-wall-name');
+      if (nameInput && nameInput.value.trim()) w.name = nameInput.value.trim();
       w.wallLength = parseFloat(document.getElementById('in-wall-length').value) || 1000;
       w.wallHeight = parseFloat(document.getElementById('in-wall-height').value) || 1000;
       w.wainscotHeight = parseFloat(document.getElementById('in-wainscot-height').value) || 600;
@@ -1524,19 +1533,34 @@
       updateCalculation();
     }
 
-    /* Wall Management */
+    /* Wall Management & Naming */
+    function onWallNameChange(val) {
+      const w = getActiveWall();
+      w.name = val.trim() || 'Untitled Wall';
+      renderWallTabs();
+      const titleEl = document.getElementById('canvas-wall-title');
+      if (titleEl) titleEl.textContent = `${w.name} Elevation`;
+    }
+
     function renderWallTabs() {
       const container = document.getElementById('wall-tabs-container');
       container.innerHTML = '';
       state.walls.forEach((w, idx) => {
         const tab = document.createElement('div');
         tab.className = `wall-tab ${idx === state.currentWallIndex ? 'active' : ''}`;
+        tab.title = 'Click to switch. Double-click or click pencil to rename.';
         tab.innerHTML = `
           <span>${w.name}</span>
-          ${state.walls.length > 1 ? `<span onclick="deleteWall(event, ${idx})" style="opacity: 0.7; font-weight: bold; margin-left: 4px;">&times;</span>` : ''}
+          <button class="wall-tab-edit-btn" onclick="renameWallPrompt(event, ${idx})" title="Rename ${w.name}" style="background:none; border:none; color:inherit; cursor:pointer; opacity:0.6; font-size:12px; padding:0 2px; line-height:1; display:flex; align-items:center;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+          ${state.walls.length > 1 ? `<span onclick="deleteWall(event, ${idx})" title="Delete wall" style="opacity: 0.6; font-weight: bold; margin-left: 2px; cursor:pointer;">&times;</span>` : ''}
         `;
+        tab.ondblclick = (e) => {
+          renameWallPrompt(e, idx);
+        };
         tab.onclick = (e) => {
-          if (e.target.tagName !== 'SPAN' || !e.target.textContent.includes('×')) {
+          if (!e.target.closest('.wall-tab-edit-btn') && (!e.target.tagName || !e.target.textContent.includes('×'))) {
             switchWall(idx);
           }
         };
@@ -1548,6 +1572,22 @@
       addBtn.textContent = '+ Wall';
       addBtn.onclick = addWall;
       container.appendChild(addBtn);
+    }
+
+    function renameWallPrompt(e, idx) {
+      if (e) e.stopPropagation();
+      const currentName = state.walls[idx].name;
+      const newName = prompt('Enter wall name / label:', currentName);
+      if (newName !== null && newName.trim() !== '') {
+        state.walls[idx].name = newName.trim();
+        if (idx === state.currentWallIndex) {
+          const inputEl = document.getElementById('in-wall-name');
+          if (inputEl) inputEl.value = state.walls[idx].name;
+          const titleEl = document.getElementById('canvas-wall-title');
+          if (titleEl) titleEl.textContent = `${state.walls[idx].name} Elevation`;
+        }
+        renderWallTabs();
+      }
     }
 
     function switchWall(idx) {
@@ -1896,7 +1936,9 @@
         conflictAlert.style.display = 'none';
       }
 
-      // Summary label
+      // Summary & title labels
+      const titleEl = document.getElementById('canvas-wall-title');
+      if (titleEl) titleEl.textContent = `${w.name} Elevation`;
       document.getElementById('canvas-summary-text').innerHTML =
         `${geo.numPanels} ${geo.isBoardAndBatten ? 'Bays' : 'Panels'} &bull; Width: <strong>${formatLength(geo.panelWidth)}</strong> &bull; Gap: <strong>${formatLength(geo.spacing)}</strong>`;
 
