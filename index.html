@@ -6,6 +6,36 @@
   <title>Wainscot Studio - Designer &amp; Calculator</title>
   <style>
     :root {
+      /* Bright Architectural Studio Light Theme (Default) */
+      --bg-primary: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --border-focus: #2563eb;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-light: rgba(37, 99, 235, 0.08);
+      --success: #059669;
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.1);
+      --danger: #dc2626;
+      --wood: #a27b5c;
+      --canvas-bg: #eef2f6;
+      --canvas-grid: rgba(148, 163, 184, 0.2);
+      --canvas-border: #cbd5e1;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* Dark Mode variables */
+    [data-theme="dark"] {
       --bg-primary: #12151b;
       --bg-surface: #1a1e27;
       --bg-surface-elevated: #232834;
@@ -24,8 +54,11 @@
       --danger: #ef4444;
       --wood: #a27b5c;
       --canvas-bg: #0f1117;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --canvas-grid: rgba(255, 255, 255, 0.03);
+      --canvas-border: #2e3545;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     }
 
     * {
@@ -42,6 +75,7 @@
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     /* Header */
@@ -56,6 +90,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: var(--shadow-sm);
     }
 
     .brand {
@@ -67,7 +102,7 @@
     .brand-logo {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
       border-radius: 6px;
       display: flex;
       align-items: center;
@@ -76,12 +111,14 @@
       font-size: 16px;
       color: white;
       letter-spacing: -0.5px;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
     }
 
     .brand-title {
       font-size: 18px;
       font-weight: 600;
       letter-spacing: -0.3px;
+      color: var(--text-main);
     }
 
     .brand-subtitle {
@@ -119,12 +156,12 @@
     .unit-btn.active {
       background: var(--accent);
       color: #ffffff;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      box-shadow: var(--shadow-sm);
     }
 
     /* Preset selector */
     .preset-select {
-      background: var(--bg-surface-elevated);
+      background: var(--bg-surface);
       color: var(--text-main);
       border: 1px solid var(--border-color);
       padding: 6px 10px;
@@ -132,6 +169,7 @@
       font-size: 13px;
       outline: none;
       cursor: pointer;
+      box-shadow: var(--shadow-sm);
     }
 
     /* Buttons */
@@ -145,14 +183,20 @@
       font-weight: 500;
       border-radius: 6px;
       border: 1px solid var(--border-color);
-      background: var(--bg-surface-elevated);
+      background: var(--bg-surface);
       color: var(--text-main);
       cursor: pointer;
       transition: all 0.15s ease;
       text-decoration: none;
+      box-shadow: var(--shadow-sm);
     }
 
     .btn:hover {
+      background: var(--bg-surface-elevated);
+      border-color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .btn:hover {
       background: #2b3242;
       border-color: #3e475c;
     }
@@ -161,6 +205,7 @@
       background: var(--accent);
       border-color: var(--accent);
       color: #ffffff;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
     }
 
     .btn-primary:hover {
@@ -174,11 +219,12 @@
     }
 
     .btn-danger {
-      color: #fca5a5;
-      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--danger);
+      border-color: rgba(220, 38, 38, 0.3);
+      background: rgba(220, 38, 38, 0.05);
     }
     .btn-danger:hover {
-      background: rgba(239, 68, 68, 0.2);
+      background: rgba(220, 38, 38, 0.15);
     }
 
     /* Main Layout */
@@ -267,7 +313,7 @@
     input[type="text"],
     select {
       width: 100%;
-      background: var(--bg-primary);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 7px 10px;
@@ -275,13 +321,15 @@
       color: var(--text-main);
       font-family: inherit;
       outline: none;
-      transition: border-color 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: var(--shadow-sm);
     }
 
     input[type="number"]:focus,
     input[type="text"]:focus,
     select:focus {
       border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px var(--accent-light);
     }
 
     .input-unit {
@@ -311,7 +359,7 @@
       padding: 5px 10px;
       font-size: 12px;
       border-radius: 4px;
-      background: var(--bg-primary);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       color: var(--text-muted);
       cursor: pointer;
@@ -319,6 +367,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      box-shadow: var(--shadow-sm);
     }
 
     .wall-tab.active {
@@ -329,13 +378,14 @@
 
     /* Obstacles list */
     .obstacle-item {
-      background: var(--bg-surface-elevated);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 10px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      box-shadow: var(--shadow-sm);
     }
 
     .obstacle-header {
@@ -347,6 +397,7 @@
     .obstacle-title {
       font-size: 13px;
       font-weight: 600;
+      color: var(--text-main);
     }
 
     /* Canvas / Work Area */
@@ -367,6 +418,7 @@
       align-items: center;
       gap: 12px;
       font-size: 13px;
+      box-shadow: var(--shadow-sm);
     }
 
     .toolbar-group {
@@ -383,28 +435,36 @@
       align-items: center;
       justify-content: center;
       padding: 30px;
+      background-image:
+        linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+      background-size: 24px 24px;
     }
 
     svg#elevation-svg {
       width: 100%;
       height: 100%;
       user-select: none;
-      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+      filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.12));
+    }
+
+    [data-theme="dark"] svg#elevation-svg {
+      filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
     }
 
     /* Tooltip */
     #designer-tooltip {
       position: absolute;
-      background: rgba(18, 21, 27, 0.95);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 8px 12px;
       font-size: 12px;
-      color: #fff;
+      color: var(--text-main);
       pointer-events: none;
       z-index: 1000;
       display: none;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      box-shadow: var(--shadow-md);
       backdrop-filter: blur(4px);
     }
 
@@ -412,13 +472,17 @@
     .conflict-banner {
       background: var(--warning-bg);
       border: 1px solid var(--warning);
-      color: #fbbf24;
+      color: #b45309;
       padding: 8px 14px;
       font-size: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
+    }
+
+    [data-theme="dark"] .conflict-banner {
+      color: #fbbf24;
     }
 
     /* Bottom Info & Output Drawer */
@@ -429,6 +493,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
     }
 
     .drawer-tabs {
@@ -448,12 +513,18 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      transition: color 0.15s ease;
+    }
+
+    .drawer-tab:hover {
+      color: var(--text-main);
     }
 
     .drawer-tab.active {
-      color: #fff;
+      color: var(--accent);
       border-bottom-color: var(--accent);
-      background: rgba(255, 255, 255, 0.02);
+      background: var(--bg-surface);
+      font-weight: 600;
     }
 
     .drawer-content {
@@ -490,7 +561,7 @@
     }
 
     .cut-table tr:hover td {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--bg-surface-elevated);
     }
 
     .badge {
@@ -503,12 +574,24 @@
     }
 
     .badge-miter {
+      background: rgba(37, 99, 235, 0.1);
+      color: #1d4ed8;
+      border: 1px solid rgba(37, 99, 235, 0.25);
+    }
+
+    .badge-butt {
+      background: rgba(5, 150, 105, 0.1);
+      color: #047857;
+      border: 1px solid rgba(5, 150, 105, 0.25);
+    }
+
+    [data-theme="dark"] .badge-miter {
       background: rgba(59, 130, 246, 0.2);
       color: #93c5fd;
       border: 1px solid rgba(59, 130, 246, 0.4);
     }
 
-    .badge-butt {
+    [data-theme="dark"] .badge-butt {
       background: rgba(16, 185, 129, 0.2);
       color: #6ee7b7;
       border: 1px solid rgba(16, 185, 129, 0.4);
@@ -522,10 +605,11 @@
     }
 
     .stock-board-card {
-      background: var(--bg-surface-elevated);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 10px 14px;
+      box-shadow: var(--shadow-sm);
     }
 
     .stock-board-meta {
@@ -539,7 +623,7 @@
     .stock-board-bar {
       display: flex;
       height: 28px;
-      background: #11141a;
+      background: var(--bg-surface-elevated);
       border-radius: 4px;
       overflow: hidden;
       border: 1px solid var(--border-color);
@@ -554,7 +638,7 @@
       font-weight: 600;
       color: #fff;
       position: relative;
-      border-right: 2px solid #000;
+      border-right: 2px solid rgba(0, 0, 0, 0.3);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -562,6 +646,17 @@
     }
 
     .cut-segment.waste {
+      background: repeating-linear-gradient(
+        45deg,
+        #e2e8f0,
+        #e2e8f0 6px,
+        #cbd5e1 6px,
+        #cbd5e1 12px
+      );
+      color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .cut-segment.waste {
       background: repeating-linear-gradient(
         45deg,
         #2a2f3a,
@@ -580,26 +675,28 @@
     }
 
     .material-card {
-      background: var(--bg-surface-elevated);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 12px 14px;
       display: flex;
       flex-direction: column;
       gap: 6px;
+      box-shadow: var(--shadow-sm);
     }
 
     .material-title {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
     .material-value {
       font-size: 20px;
       font-weight: 700;
-      color: #fff;
+      color: var(--text-main);
     }
 
     .material-detail {
@@ -631,8 +728,8 @@
     .cost-total-row td {
       font-weight: 700;
       font-size: 15px;
-      color: #fff;
-      background: rgba(37, 99, 235, 0.1);
+      color: var(--accent);
+      background: var(--accent-light);
       border-top: 2px solid var(--accent);
     }
 
@@ -707,6 +804,9 @@
         <option value="raised_panel">Traditional Raised Panel</option>
         <option value="beadboard">Cottage Beadboard &amp; Dado</option>
       </select>
+
+      <!-- Theme Toggle -->
+      <button class="btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Theme">Theme: Light</button>
 
       <button class="btn" onclick="exportCSV()">Download CSV</button>
       <button class="btn" onclick="exportProjectJSON()">Save JSON</button>
@@ -961,10 +1061,12 @@
               <select id="in-wall-color" onchange="renderElevation()">
                 <option value="#f8fafc">Pure White (#f8fafc)</option>
                 <option value="#f1f5f9" selected>Off White (#f1f5f9)</option>
+                <option value="#fdfbf7">Warm Cream (#fdfbf7)</option>
                 <option value="#e2e8f0">Light Grey (#e2e8f0)</option>
+                <option value="#e0e7ff">Soft Coastal Mist (#e0e7ff)</option>
+                <option value="#3f4e4f">Sage Green (#3f4e4f)</option>
                 <option value="#334155">Hale Navy (#334155)</option>
                 <option value="#1e293b">Dark Charcoal (#1e293b)</option>
-                <option value="#3f4e4f">Sage Green (#3f4e4f)</option>
               </select>
             </div>
             <div class="form-group">
@@ -972,6 +1074,7 @@
               <select id="in-trim-color" onchange="renderElevation()">
                 <option value="#ffffff" selected>Bright White (#ffffff)</option>
                 <option value="#f8fafc">Alabaster White (#f8fafc)</option>
+                <option value="#f5efe6">Warm Linen (#f5efe6)</option>
                 <option value="#e2e8f0">Soft Grey Trim (#e2e8f0)</option>
                 <option value="#334155">Navy Trim (#334155)</option>
                 <option value="#1e293b">Charcoal Trim (#1e293b)</option>
@@ -1778,6 +1881,11 @@
       const wallColor = document.getElementById('in-wall-color').value;
       const trimColor = document.getElementById('in-trim-color').value;
 
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const wallStroke = isDark ? '#475569' : '#cbd5e1';
+      const trimStroke = isDark ? '#334155' : '#64748b';
+      const shadowOpacity = isDark ? '0.35' : '0.12';
+
       // Conflict alert badge
       const conflictAlert = document.getElementById('conflict-alert');
       const conflictText = document.getElementById('conflict-text');
@@ -1803,7 +1911,7 @@
       let markup = `
         <defs>
           <filter id="moulding-shadow" x="-5%" y="-5%" width="110%" height="110%">
-            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.35" />
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="${shadowOpacity}" />
           </filter>
           <pattern id="beadboard-pattern" width="${state.unit === 'mm' ? 50 : 2}" height="100" patternUnits="userSpaceOnUse">
             <line x1="0" y1="0" x2="0" y2="100" stroke="rgba(0,0,0,0.15)" stroke-width="2" />
@@ -1812,7 +1920,7 @@
         </defs>
 
         <!-- Wall Background -->
-        <rect x="0" y="0" width="${geo.wallLength}" height="${geo.wallHeight}" fill="${wallColor}" stroke="#475569" stroke-width="2" />
+        <rect x="0" y="0" width="${geo.wallLength}" height="${geo.wallHeight}" fill="${wallColor}" stroke="${wallStroke}" stroke-width="2" />
       `;
 
       // Beadboard or Panel Backing Sheet
@@ -1831,7 +1939,7 @@
       const baseTopY = geo.wallHeight - geo.baseboardHeight;
       markup += `
         <g id="baseboard-group">
-          <rect x="0" y="${baseTopY}" width="${geo.wallLength}" height="${geo.baseboardHeight}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+          <rect x="0" y="${baseTopY}" width="${geo.wallLength}" height="${geo.baseboardHeight}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
           <!-- Base cap line -->
           <line x1="0" y1="${baseTopY + 12}" x2="${geo.wallLength}" y2="${baseTopY + 12}" stroke="rgba(0,0,0,0.2)" stroke-width="1.5" />
         </g>
@@ -1842,7 +1950,7 @@
       if (geo.chairRailHeight > 0) {
         markup += `
           <g id="chair-rail-group">
-            <rect x="0" y="${chairRailTopY}" width="${geo.wallLength}" height="${geo.chairRailHeight}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+            <rect x="0" y="${chairRailTopY}" width="${geo.wallLength}" height="${geo.chairRailHeight}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
             <line x1="0" y1="${chairRailTopY + (geo.chairRailHeight * 0.4)}" x2="${geo.wallLength}" y2="${chairRailTopY + (geo.chairRailHeight * 0.4)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.5" />
           </g>
         `;
@@ -1854,7 +1962,7 @@
         const topRailH = geo.trimWidth;
         const topRailY = chairRailTopY + geo.chairRailHeight;
         markup += `
-          <rect x="0" y="${topRailY}" width="${geo.wallLength}" height="${topRailH}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" />
+          <rect x="0" y="${topRailY}" width="${geo.wallLength}" height="${topRailH}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" />
         `;
 
         // Vertical Battens (Stiles)
@@ -1862,7 +1970,7 @@
           const battenX = b * (geo.panelWidth + geo.trimWidth);
           const battenH = baseTopY - (topRailY + topRailH);
           markup += `
-            <rect x="${battenX}" y="${topRailY + topRailH}" width="${geo.trimWidth}" height="${battenH}" fill="${trimColor}" stroke="#334155" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} onmouseenter="showTooltip(evt, 'Batten #${b + 1}: ${formatLength(geo.trimWidth)} x ${formatLength(battenH)}')" onmouseleave="hideTooltip()" />
+            <rect x="${battenX}" y="${topRailY + topRailH}" width="${geo.trimWidth}" height="${battenH}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} onmouseenter="showTooltip(evt, 'Batten #${b + 1}: ${formatLength(geo.trimWidth)} x ${formatLength(battenH)}')" onmouseleave="hideTooltip()" />
           `;
         }
 
@@ -1878,7 +1986,7 @@
             for (let i = 0; i < geo.numPanels; i++) {
               const bayX = (i * (geo.panelWidth + geo.trimWidth)) + geo.trimWidth;
               markup += `
-                <rect x="${bayX}" y="${midRailY}" width="${geo.panelWidth}" height="${railW}" fill="${trimColor}" stroke="#334155" stroke-width="1" />
+                <rect x="${bayX}" y="${midRailY}" width="${geo.panelWidth}" height="${railW}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1" />
               `;
             }
           }
@@ -1926,13 +2034,17 @@
       // Render Obstacles (Doors, Windows, Outlets)
       w.obstacles.forEach(obs => {
         const obsSvgY = geo.wallHeight - (obs.y + obs.height);
+        const obsFill = isDark ? '#334155' : '#ffffff';
+        const obsStroke = isDark ? '#f59e0b' : '#d97706';
+        const obsText = isDark ? '#f59e0b' : '#b45309';
+        const obsHole = isDark ? '#64748b' : '#94a3b8';
         markup += `
           <g id="${obs.id}" class="obstacle-svg-group" onmouseenter="showTooltip(evt, '${obs.name} (${formatLength(obs.width)} x ${formatLength(obs.height)})')" onmouseleave="hideTooltip()">
-            <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="#334155" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2" rx="3" />
+            <rect x="${obs.x}" y="${obsSvgY}" width="${obs.width}" height="${obs.height}" fill="${obsFill}" stroke="${obsStroke}" stroke-width="2" stroke-dasharray="4,2" rx="3" />
             <!-- Receptacle holes detail -->
-            <circle cx="${obs.x + obs.width * 0.35}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="#64748b" />
-            <circle cx="${obs.x + obs.width * 0.65}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="#64748b" />
-            <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="#f59e0b" text-anchor="middle" font-weight="600">${obs.name}</text>
+            <circle cx="${obs.x + obs.width * 0.35}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
+            <circle cx="${obs.x + obs.width * 0.65}" cy="${obsSvgY + obs.height * 0.5}" r="${Math.min(obs.width, obs.height) * 0.15}" fill="${obsHole}" />
+            <text x="${obs.x + obs.width/2}" y="${obsSvgY - 8}" font-size="12" font-family="system-ui" fill="${obsText}" text-anchor="middle" font-weight="600">${obs.name}</text>
           </g>
         `;
       });
@@ -1950,7 +2062,12 @@
       const fontSize = 12;
       const font = 'system-ui, sans-serif';
       const tickSize = 10;
-      const color = '#94a3b8';
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const color = isDark ? '#94a3b8' : '#64748b';
+      const textColor = isDark ? '#ffffff' : '#0f172a';
+      const subTextColor = isDark ? '#cbd5e1' : '#334155';
+      const badgeBg = isDark ? '#1a1e27' : '#ffffff';
+      const badgeBorder = isDark ? '#2e3545' : '#cbd5e1';
 
       // 1. Total Wall Length dimension string (Above Wall)
       const topDimY = -60;
@@ -1959,8 +2076,8 @@
           <line x1="0" y1="${topDimY}" x2="${geo.wallLength}" y2="${topDimY}" stroke="${color}" stroke-width="1.5" />
           <line x1="0" y1="${topDimY - tickSize}" x2="0" y2="${topDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
           <line x1="${geo.wallLength}" y1="${topDimY - tickSize}" x2="${geo.wallLength}" y2="${topDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
-          <rect x="${geo.wallLength/2 - 50}" y="${topDimY - 18}" width="100" height="18" fill="var(--bg-primary)" rx="3" />
-          <text x="${geo.wallLength/2}" y="${topDimY - 5}" font-size="${fontSize}" font-family="${font}" fill="#ffffff" text-anchor="middle" font-weight="600">
+          <rect x="${geo.wallLength/2 - 60}" y="${topDimY - 18}" width="120" height="20" fill="${badgeBg}" stroke="${badgeBorder}" rx="3" />
+          <text x="${geo.wallLength/2}" y="${topDimY - 4}" font-size="${fontSize}" font-family="${font}" fill="${textColor}" text-anchor="middle" font-weight="600">
             TOTAL: ${formatLength(geo.wallLength)}
           </text>
         </g>
@@ -1978,7 +2095,7 @@
             <line x1="${bayX}" y1="${botDimY}" x2="${bayX + geo.panelWidth}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
             <line x1="${bayX}" y1="${botDimY - tickSize}" x2="${bayX}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
             <line x1="${bayX + geo.panelWidth}" y1="${botDimY - tickSize}" x2="${bayX + geo.panelWidth}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
-            <text x="${bayX + geo.panelWidth/2}" y="${botDimY + 20}" font-size="${fontSize - 1}" font-family="${font}" fill="#cbd5e1" text-anchor="middle">
+            <text x="${bayX + geo.panelWidth/2}" y="${botDimY + 20}" font-size="${fontSize - 1}" font-family="${font}" fill="${subTextColor}" text-anchor="middle" font-weight="500">
               ${formatLength(geo.panelWidth)}
             </text>
           `;
@@ -1991,7 +2108,7 @@
             <line x1="0" y1="${botDimY}" x2="${geo.leftMargin}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
             <line x1="0" y1="${botDimY - tickSize}" x2="0" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
             <line x1="${geo.leftMargin}" y1="${botDimY - tickSize}" x2="${geo.leftMargin}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
-            <text x="${geo.leftMargin/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="#cbd5e1" text-anchor="middle">
+            <text x="${geo.leftMargin/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="${subTextColor}" text-anchor="middle" font-weight="500">
               ${formatLength(geo.leftMargin)}
             </text>
           `;
@@ -2005,8 +2122,8 @@
             <line x1="${curX}" y1="${botDimY}" x2="${curX + geo.panelWidth}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
             <line x1="${curX}" y1="${botDimY - tickSize}" x2="${curX}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
             <line x1="${curX + geo.panelWidth}" y1="${botDimY - tickSize}" x2="${curX + geo.panelWidth}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
-            <rect x="${curX + geo.panelWidth/2 - 35}" y="${botDimY - 14}" width="70" height="15" fill="var(--bg-primary)" rx="2" />
-            <text x="${curX + geo.panelWidth/2}" y="${botDimY - 2}" font-size="${fontSize}" font-family="${font}" fill="#ffffff" text-anchor="middle" font-weight="600">
+            <rect x="${curX + geo.panelWidth/2 - 38}" y="${botDimY - 14}" width="76" height="18" fill="${badgeBg}" stroke="${badgeBorder}" rx="3" />
+            <text x="${curX + geo.panelWidth/2}" y="${botDimY}" font-size="${fontSize}" font-family="${font}" fill="${textColor}" text-anchor="middle" font-weight="600">
               ${formatLength(geo.panelWidth)}
             </text>
           `;
@@ -2018,7 +2135,7 @@
             d += `
               <line x1="${curX}" y1="${botDimY}" x2="${curX + geo.spacing}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
               <line x1="${curX + geo.spacing}" y1="${botDimY - tickSize}" x2="${curX + geo.spacing}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
-              <text x="${curX + geo.spacing/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="#94a3b8" text-anchor="middle">
+              <text x="${curX + geo.spacing/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="${subTextColor}" text-anchor="middle" font-weight="500">
                 ${formatLength(geo.spacing)}
               </text>
             `;
@@ -2031,7 +2148,7 @@
           d += `
             <line x1="${curX}" y1="${botDimY}" x2="${geo.wallLength}" y2="${botDimY}" stroke="${color}" stroke-width="1.5" />
             <line x1="${geo.wallLength}" y1="${botDimY - tickSize}" x2="${geo.wallLength}" y2="${botDimY + tickSize}" stroke="${color}" stroke-width="1.5" />
-            <text x="${curX + geo.rightMargin/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="#cbd5e1" text-anchor="middle">
+            <text x="${curX + geo.rightMargin/2}" y="${botDimY + 18}" font-size="11" font-family="${font}" fill="${subTextColor}" text-anchor="middle" font-weight="500">
               ${formatLength(geo.rightMargin)}
             </text>
           `;
@@ -2051,14 +2168,15 @@
           <line x1="${leftDimX}" y1="${geo.wallHeight}" x2="${leftDimX}" y2="${chairRailTopY}" stroke="${color}" stroke-width="1.5" />
           <line x1="${leftDimX - tickSize}" y1="${geo.wallHeight}" x2="${leftDimX + tickSize}" y2="${geo.wallHeight}" stroke="${color}" stroke-width="1.5" />
           <line x1="${leftDimX - tickSize}" y1="${chairRailTopY}" x2="${leftDimX + tickSize}" y2="${chairRailTopY}" stroke="${color}" stroke-width="1.5" />
-          <text x="${leftDimX - 10}" y="${(geo.wallHeight + chairRailTopY)/2 + 4}" font-size="${fontSize}" font-family="${font}" fill="#ffffff" text-anchor="end" font-weight="600">
+          <rect x="${leftDimX - 95}" y="${(geo.wallHeight + chairRailTopY)/2 - 10}" width="85" height="20" fill="${badgeBg}" stroke="${badgeBorder}" rx="3" />
+          <text x="${leftDimX - 52}" y="${(geo.wallHeight + chairRailTopY)/2 + 4}" font-size="${fontSize}" font-family="${font}" fill="${textColor}" text-anchor="middle" font-weight="600">
             H: ${formatLength(geo.wainscotHeight)}
           </text>
           
           <!-- Baseboard Height -->
           <line x1="${leftDimX + 30}" y1="${geo.wallHeight}" x2="${leftDimX + 30}" y2="${baseTopY}" stroke="${color}" stroke-width="1" />
           <line x1="${leftDimX + 25}" y1="${baseTopY}" x2="${leftDimX + 35}" y2="${baseTopY}" stroke="${color}" stroke-width="1" />
-          <text x="${leftDimX + 20}" y="${(geo.wallHeight + baseTopY)/2 + 3}" font-size="10" font-family="${font}" fill="#94a3b8" text-anchor="end">
+          <text x="${leftDimX + 20}" y="${(geo.wallHeight + baseTopY)/2 + 3}" font-size="10" font-family="${font}" fill="${subTextColor}" text-anchor="end" font-weight="500">
             Base ${formatLength(geo.baseboardHeight)}
           </text>
         </g>
@@ -2588,8 +2706,31 @@
       reader.readAsText(file);
     }
 
+    /* Theme Management */
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      localStorage.setItem('wainscot-theme', next);
+    }
+
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.textContent = 'Theme: Dark';
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.textContent = 'Theme: Light';
+      }
+      renderElevation();
+    }
+
     // Initialize application on DOM load
     window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('wainscot-theme') || 'light';
+      applyTheme(savedTheme);
       syncInputsFromState();
       updateCalculation();
     });
