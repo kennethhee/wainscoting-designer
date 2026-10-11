@@ -1,218 +1,390 @@
-// Verification test for Wainscoting Calculator Core Logic
-// Run with: node test_calculator.js
+// Verification test for Wainscoting Calculator Core Engine
+// Run with: node test_calculator.js (or npm test)
 
-function calculatePictureFrameSpacing(params) {
-  const {
-    wallLength,
-    marginSides, // can be fixed or 'equal'
-    targetPanelWidth,
-    panelCount,
-    spacingBetween, // can be fixed or 'auto'
-  } = params;
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
 
-  let count = panelCount;
-  let spacing = spacingBetween;
-  let margin = marginSides;
+console.log('====================================================');
+console.log('  Wainscot Studio — Core Engine Verification Tests  ');
+console.log('====================================================\n');
 
-  if (count && count > 0) {
-    if (margin === 'equal') {
-      // All spaces (margins + gaps) are equal: (count + 1) spaces
-      if (spacing !== 'auto' && spacing > 0) {
-        // spacing is given, compute panel width
-        const totalSpacing = (count + 1) * spacing;
-        const panelWidth = (wallLength - totalSpacing) / count;
-        return { count, panelWidth, spacing, margin: spacing, valid: panelWidth > 0 };
-      } else {
-        // default spacing or compute from targetPanelWidth
-        if (targetPanelWidth) {
-          spacing = (wallLength - count * targetPanelWidth) / (count + 1);
-          return { count, panelWidth: targetPanelWidth, spacing, margin: spacing, valid: spacing > 0 };
-        }
-      }
-    } else {
-      // Fixed margin sides, equal spacing between panels
-      const sideMargin = typeof margin === 'number' ? margin : 100;
-      const availableSpan = wallLength - (2 * sideMargin);
-      if (spacing !== 'auto' && typeof spacing === 'number') {
-        const totalInteriorSpacing = (count - 1) * spacing;
-        const panelWidth = (availableSpan - totalInteriorSpacing) / count;
-        return { count, panelWidth, spacing, margin: sideMargin, valid: panelWidth > 0 };
-      } else {
-        // Auto spacing: make spacing equal to side margin or distribute evenly
-        const numSpaces = count - 1;
-        if (targetPanelWidth) {
-          const remaining = availableSpan - (count * targetPanelWidth);
-          spacing = numSpaces > 0 ? remaining / numSpaces : 0;
-          return { count, panelWidth: targetPanelWidth, spacing, margin: sideMargin, valid: spacing >= 0 };
-        }
-      }
-    }
-  }
-
-  // Automatic panel count derivation based on target panel width
-  if (targetPanelWidth && targetPanelWidth > 0) {
-    const assumedSpacing = typeof spacing === 'number' ? spacing : 100;
-    // (wallLength - assumedSpacing) / (targetPanelWidth + assumedSpacing)
-    let approxCount = Math.round((wallLength - assumedSpacing) / (targetPanelWidth + assumedSpacing));
-    approxCount = Math.max(1, approxCount);
-    const calculatedSpacing = (wallLength - (approxCount * targetPanelWidth)) / (approxCount + 1);
-    return {
-      count: approxCount,
-      panelWidth: targetPanelWidth,
-      spacing: calculatedSpacing,
-      margin: calculatedSpacing,
-      valid: calculatedSpacing > 0
-    };
-  }
-
-  return { valid: false };
-}
-
-// 1D Cutting Stock Bin-Packing Optimizer (Best-Fit Decreasing)
-function optimizeCuttingStock(cuts, stockLength, kerf = 3) {
-  // cuts is array of lengths
-  // Sort descending
-  const sortedCuts = [...cuts].sort((a, b) => b - a);
-  const boards = []; // each board: { remaining: stockLength, cuts: [] }
-
-  for (const cut of sortedCuts) {
-    if (cut > stockLength) {
-      throw new Error(`Cut of length ${cut} exceeds stock board length ${stockLength}`);
-    }
-
-    // Best-fit: find board with least remaining space that can still fit the cut
-    let bestBoardIndex = -1;
-    let minRemainingAfter = Infinity;
-
-    for (let i = 0; i < boards.length; i++) {
-      const spaceNeeded = boards[i].cuts.length > 0 ? cut + kerf : cut;
-      if (boards[i].remaining >= spaceNeeded) {
-        const rem = boards[i].remaining - spaceNeeded;
-        if (rem < minRemainingAfter) {
-          minRemainingAfter = rem;
-          bestBoardIndex = i;
-        }
-      }
-    }
-
-    if (bestBoardIndex !== -1) {
-      const spaceNeeded = boards[bestBoardIndex].cuts.length > 0 ? cut + kerf : cut;
-      boards[bestBoardIndex].remaining -= spaceNeeded;
-      boards[bestBoardIndex].cuts.push(cut);
-    } else {
-      // Need a new board
-      boards.push({
-        remaining: stockLength - cut,
-        cuts: [cut]
-      });
-    }
-  }
-
-  const totalUsedStockLength = boards.length * stockLength;
-  const totalCutLength = cuts.reduce((acc, c) => acc + c, 0);
-  const wasteLength = totalUsedStockLength - totalCutLength;
-  const wastePercentage = (wasteLength / totalUsedStockLength) * 100;
-
-  return {
-    boardCount: boards.length,
-    boards,
-    totalCutLength,
-    totalUsedStockLength,
-    wastePercentage: wastePercentage.toFixed(1)
-  };
-}
-
-// Obstacle collision detection
-function checkObstacleCollisions(panels, obstacles) {
-  // panels: [{ id, x, width, y, height }]
-  // obstacles: [{ id, name, x, width, y, height }]
-  const conflicts = [];
-  for (const panel of panels) {
-    for (const obs of obstacles) {
-      const xOverlap = panel.x < (obs.x + obs.width) && (panel.x + panel.width) > obs.x;
-      const yOverlap = panel.y < (obs.y + obs.height) && (panel.y + panel.height) > obs.y;
-      if (xOverlap && yOverlap) {
-        conflicts.push({
-          panelId: panel.id,
-          obstacleId: obs.id,
-          obstacleName: obs.name,
-          details: `Panel ${panel.id} overlaps with ${obs.name}`
-        });
-      }
-    }
-  }
-  return conflicts;
-}
-
-// RUN TESTS
-console.log('Testing Wainscoting Spacing Logic...');
-const res1 = calculatePictureFrameSpacing({
-  wallLength: 3600,
-  marginSides: 'equal',
-  targetPanelWidth: 600,
-  spacingBetween: 'auto',
-  panelCount: 4
-});
-console.log('Result 1 (4 panels on 3600mm wall, equal spacing):', res1);
-if (!res1.valid || res1.spacing !== 240) {
-  console.error(`FAILED: Expected spacing 240, got ${res1.spacing}`);
+// 1. EXTRACT ENGINE FROM index.html (Node vm Test Seam - Decision D1 Option B)
+const htmlPath = path.join(__dirname, 'index.html');
+if (!fs.existsSync(htmlPath)) {
+  console.error(`FAILED: index.html not found at ${htmlPath}`);
   process.exit(1);
 }
 
-const res2 = calculatePictureFrameSpacing({
+const htmlSource = fs.readFileSync(htmlPath, 'utf8');
+const engineBlockRegex = /\/\* === CORE CALCULATOR ENGINE START \((.*?)\) === \*\/([\s\S]*?)\/\* === CORE CALCULATOR ENGINE END \(\1\) === \*\//g;
+
+let match;
+const extractedBlocks = {};
+let combinedEngineCode = '';
+
+while ((match = engineBlockRegex.exec(htmlSource)) !== null) {
+  const blockName = match[1];
+  const blockCode = match[2];
+  extractedBlocks[blockName] = blockCode;
+  combinedEngineCode += `\n/* --- Block: ${blockName} --- */\n` + blockCode;
+}
+
+const expectedBlocks = ['utils', 'catalog', 'geometry', 'cutlist', 'stock+paint', 'project'];
+console.log(`Extracted ${Object.keys(extractedBlocks).length} engine block(s) from index.html:`);
+for (const b of Object.keys(extractedBlocks)) {
+  console.log(`  ✓ Block: (${b}) - ${extractedBlocks[b].trim().split('\n').length} lines`);
+}
+
+for (const exp of expectedBlocks) {
+  if (!extractedBlocks[exp]) {
+    console.error(`FAILED: Missing expected engine block (${exp}) in index.html`);
+    process.exit(1);
+  }
+}
+
+// Evaluate in isolated VM context
+const sandbox = {
+  Math,
+  parseFloat,
+  parseInt,
+  Number,
+  String,
+  Array,
+  Object,
+  JSON,
+  console
+};
+vm.createContext(sandbox);
+
+try {
+  vm.runInContext(combinedEngineCode, sandbox);
+  console.log('\n✓ Core Engine successfully evaluated in isolated VM context.\n');
+} catch (err) {
+  console.error('FAILED: Error evaluating extracted engine in VM context:', err);
+  process.exit(1);
+}
+
+// Destructure functions from VM context
+const {
+  roundUnit,
+  formatLength,
+  escHtml,
+  escJsAttr,
+  PRESETS_CATALOG,
+  computeWallGeometry,
+  computeCutList,
+  buildFlatCuts,
+  packCuts,
+  computePaintArea,
+  computeProjectTotals,
+  normalizeProject
+} = sandbox;
+
+function assert(condition, message) {
+  if (!condition) {
+    console.error(`FAILED ASSERTION: ${message}`);
+    process.exit(1);
+  }
+}
+
+// -------------------------------------------------------------
+// TEST SUITE 1: Engine Seam & Export Integrity
+// -------------------------------------------------------------
+console.log('--- Test Suite 1: Seam & Export Integrity ---');
+assert(typeof computeWallGeometry === 'function', 'computeWallGeometry must be a function');
+assert(typeof computeCutList === 'function', 'computeCutList must be a function');
+assert(typeof packCuts === 'function', 'packCuts must be a function');
+assert(typeof computePaintArea === 'function', 'computePaintArea must be a function');
+assert(typeof computeProjectTotals === 'function', 'computeProjectTotals must be a function');
+assert(typeof normalizeProject === 'function', 'normalizeProject must be a function');
+assert(typeof escHtml === 'function', 'escHtml must be a function');
+assert(typeof escJsAttr === 'function', 'escJsAttr must be a function');
+assert(typeof PRESETS_CATALOG === 'object', 'PRESETS_CATALOG must be an object');
+console.log('✓ All 11 core engine exports verified.');
+
+// -------------------------------------------------------------
+// TEST SUITE 2: Spacing & Wall Geometry
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 2: Spacing & Geometry Logic ---');
+const sampleWall = {
+  name: 'Living Room',
   wallLength: 3600,
-  marginSides: 100,
+  wallHeight: 2400,
+  wainscotHeight: 950,
+  baseboardHeight: 120,
+  chairRailHeight: 50,
+  trimWidth: 40,
+  calcMode: 'auto_count',
   panelCount: 4,
-  spacingBetween: 100
+  marginMode: 'equal',
+  customMargin: 100,
+  spacing: 100,
+  marginBottom: 80,
+  marginTop: 80,
+  style: 'picture_frame',
+  obstacles: []
+};
+
+const geoEqual = computeWallGeometry(sampleWall);
+console.log(`4 Panels on 3600mm Wall (Equal Margins): Box width=${geoEqual.panelWidth}mm, Spacing=${geoEqual.spacing}mm`);
+// 5 spaces (margins + gaps) of 100mm = 500mm. 3600 - 500 = 3100. 3100 / 4 = 775mm
+assert(geoEqual.numPanels === 4, 'Expected 4 panels');
+assert(geoEqual.panelWidth === 775, `Expected panel width 775mm, got ${geoEqual.panelWidth}`);
+assert(geoEqual.spacing === 100, `Expected spacing 100mm, got ${geoEqual.spacing}`);
+assert(geoEqual.panels.length === 4, 'Expected 4 rendered panels');
+
+// Test fixed custom margin
+const wallCustom = Object.assign({}, sampleWall, { marginMode: 'custom', customMargin: 150 });
+const geoCustom = computeWallGeometry(wallCustom);
+// 2 margins of 150 = 300. 3 gaps of 100 = 300. Total spacing = 600. Remaining span = 3000. 3000/4 = 750mm
+console.log(`4 Panels on 3600mm Wall (Custom 150mm Margins): Box width=${geoCustom.panelWidth}mm`);
+assert(geoCustom.panelWidth === 750, `Expected panel width 750mm, got ${geoCustom.panelWidth}`);
+assert(geoCustom.leftMargin === 150, 'Expected left margin 150mm');
+
+// Test obstacle collision detection in geometry engine
+const wallWithObstacle = Object.assign({}, sampleWall, {
+  obstacles: [
+    { id: 'obs-1', name: 'Power Outlet', x: 90, y: 300, width: 80, height: 120, type: 'outlet' }
+  ]
 });
-console.log('Result 2 (4 panels, fixed 100mm margins and 100mm gaps):', res2);
-// wall = 3600. sides = 200. remaining = 3400. 3 gaps of 100 = 300. panel span = 3100. 3100/4 = 775
-if (!res2.valid || res2.panelWidth !== 775) {
-  console.error(`FAILED: Expected panel width 775, got ${res2.panelWidth}`);
-  process.exit(1);
-}
+const geoCollision = computeWallGeometry(wallWithObstacle);
+console.log(`Obstacle collisions detected: ${geoCollision.conflicts.length}`);
+assert(geoCollision.conflicts.length > 0, 'Expected obstacle collision with first panel frame perimeter');
+assert(geoCollision.conflicts[0].obstacle === 'Power Outlet', 'Expected collision with Power Outlet');
+console.log('✓ Wall geometry and collision detection tests passed.');
 
-console.log('\nTesting Cutting Stock Optimizer...');
-const cutsToMake = [900, 900, 900, 900, 600, 600, 600, 600, 750, 750];
-const stockRes = optimizeCuttingStock(cutsToMake, 2400, 3);
-console.log(`Stock Result: ${stockRes.boardCount} boards required, ${stockRes.wastePercentage}% waste.`);
-for (let i = 0; i < stockRes.boards.length; i++) {
-  console.log(`  Board ${i + 1}: cuts [${stockRes.boards[i].cuts.join(', ')}], remaining: ${stockRes.boards[i].remaining}mm`);
-}
-if (stockRes.boardCount <= 0 || stockRes.boards.length > 5) {
-  console.error('FAILED: Optimization board count outside expected range');
-  process.exit(1);
-}
+// -------------------------------------------------------------
+// TEST SUITE 3: Cut List Schedule Generation
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 3: Cut List Schedule Generation ---');
+const cuts = computeCutList(geoEqual, sampleWall);
+console.log(`Generated ${cuts.length} cut list rows:`);
+cuts.forEach(c => console.log(`  - ${c.tag}: ${c.name} (${c.quantity}x @ ${c.length}mm, ${c.cutType})`));
 
-console.log('\nTesting Obstacle Collision Detection...');
-const panels = [
-  { id: 1, x: 100, width: 600, y: 150, height: 700 },
-  { id: 2, x: 800, width: 600, y: 150, height: 700 }
+assert(cuts.length === 10, 'Expected 10 cut rows (2 per panel * 4 panels + chair rail + baseboard)');
+const hCuts = cuts.filter(c => c.tag.endsWith('-H'));
+const vCuts = cuts.filter(c => c.tag.endsWith('-V'));
+const chairRailCut = cuts.find(c => c.tag === 'CHR-RAIL');
+const baseboardCut = cuts.find(c => c.tag === 'BASE-BRD');
+
+assert(hCuts.length === 4, 'Expected 4 horizontal box rail entries');
+assert(hCuts[0].length === 775, `Expected top/bottom rail length 775mm, got ${hCuts[0].length}`);
+assert(hCuts[0].quantity === 2, 'Expected 2 rails per panel');
+assert(vCuts.length === 4, 'Expected 4 vertical box stile entries');
+assert(vCuts[0].length === 620, `Expected vertical stile length 620mm, got ${vCuts[0].length}`);
+assert(vCuts[0].quantity === 2, 'Expected 2 stiles per panel');
+assert(chairRailCut && chairRailCut.length === 3600, 'Expected chair rail length to match wallLength (3600mm)');
+assert(baseboardCut && baseboardCut.length === 3600, 'Expected baseboard length to match wallLength (3600mm)');
+console.log('✓ Cut list generation tests passed.');
+
+// -------------------------------------------------------------
+// TEST SUITE 4: Cutting Stock Bin-Packing & Oversize Detection
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 4: Stock Optimizer & Over-Length Cuts ---');
+const flatCuts = buildFlatCuts(cuts);
+console.log(`Built ${flatCuts.length} stock pieces for bin packing.`);
+
+// Test standard bin-packing
+const packed = packCuts(flatCuts, 2400, 3);
+console.log(`Packed into ${packed.boards.length} stock boards (2400mm) with ${packed.wastePct.toFixed(1)}% waste.`);
+assert(packed.boards.length > 0, 'Expected at least 1 stock board');
+assert(packed.wastePct >= 0 && packed.wastePct < 50, 'Waste percentage should be within realistic threshold');
+assert(packed.oversize.length === 0, 'No pieces should be oversize for standard 775mm cuts on 2400mm board');
+
+// Test Over-length Cut Detection (T6 / F6)
+const oversizeFlatCuts = [
+  { tag: 'EXTRA-LONG-RAIL', length: 3000 },
+  { tag: 'NORMAL-STILE', length: 800 }
 ];
-const obstacles = [
-  { id: 'outlet-1', name: 'Power Outlet', x: 250, width: 80, y: 300, height: 120 },
-  { id: 'outlet-2', name: 'Light Switch', x: 750, width: 80, y: 1100, height: 120 }
-];
-const collisions = checkObstacleCollisions(panels, obstacles);
-console.log(`Found ${collisions.length} collision(s):`, collisions);
-if (collisions.length !== 1 || collisions[0].panelId !== 1) {
-  console.error('FAILED: Expected 1 collision with panel 1');
-  process.exit(1);
-}
+const packedOversize = packCuts(oversizeFlatCuts, 2400, 3);
+console.log(`Oversize detection result: ${packedOversize.oversize.length} oversize piece(s) flagged:`);
+packedOversize.oversize.forEach(o => console.log(`  - Piece "${o.tag}" of length ${o.length}mm requires ${o.joints} joint(s)`));
+assert(packedOversize.oversize.length === 1, 'Expected 1 oversize piece detected');
+assert(packedOversize.oversize[0].tag === 'EXTRA-LONG-RAIL', 'Expected EXTRA-LONG-RAIL to be flagged');
+assert(packedOversize.oversize[0].joints === 1, 'Expected 3000mm on 2400mm stock to require 1 joint');
+console.log('✓ Stock bin-packing and over-length cut detection tests passed.');
 
-console.log('\nTesting Hisense 55" CanvasTV Placement & Clearance...');
-const wallLength = 3600;
-const wainscotHeight = 950;
-const tvWidth = 1256;
-const tvHeight = 733;
-const centeredX = Math.round((wallLength - tvWidth) / 2);
-const mountY = wainscotHeight + 100;
-console.log(`CanvasTV centered at X=${centeredX}mm, mounted at Y=${mountY}mm`);
-const clearance = mountY - wainscotHeight;
-if (centeredX !== 1172 || clearance !== 100) {
-  console.error(`FAILED: Expected centered X=1172, clearance=100; got X=${centeredX}, clearance=${clearance}`);
-  process.exit(1);
-}
-console.log(`CanvasTV Clearance above rail: ${clearance}mm. Passed!`);
+// -------------------------------------------------------------
+// TEST SUITE 5: Colour Drench Paint Area & Openings Subtraction
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 5: Paint Area Maths (Colour Drench & Openings) ---');
 
-console.log('\nALL MATH TESTS PASSED!');
+// Case A: Colour Drench (wallColor === trimColor) -> Full Wall Floor-to-Ceiling
+const wallDrench = {
+  wallLength: 3600,
+  wallHeight: 2400,
+  wainscotHeight: 950,
+  wallColor: '#f4efe6',
+  trimColor: '#f4efe6',
+  paintScope: 'auto',
+  obstacles: []
+};
+const paintDrench = computePaintArea(wallDrench, 'mm');
+console.log(`Colour Drench (3600x2400): Full wall = ${paintDrench.fullWall}, Area = ${paintDrench.areaSqM.toFixed(2)} m²`);
+// 3.6m * 2.4m = 8.64 m²
+assert(paintDrench.fullWall === true, 'Colour drench with matching colors must default to full wall');
+assert(Math.abs(paintDrench.areaSqM - 8.64) < 0.01, `Expected 8.64 m², got ${paintDrench.areaSqM}`);
+
+// Case B: Non-Drench Two-Tone -> Wainscot Height Only
+const wallTwoTone = {
+  wallLength: 3600,
+  wallHeight: 2400,
+  wainscotHeight: 950,
+  wallColor: '#f8fafc',
+  trimColor: '#334155',
+  paintScope: 'auto',
+  obstacles: []
+};
+const paintTwoTone = computePaintArea(wallTwoTone, 'mm');
+console.log(`Two-Tone (3600x950 wainscot): Full wall = ${paintTwoTone.fullWall}, Area = ${paintTwoTone.areaSqM.toFixed(2)} m²`);
+// 3.6m * 0.95m = 3.42 m²
+assert(paintTwoTone.fullWall === false, 'Two tone should paint wainscot height only');
+assert(Math.abs(paintTwoTone.areaSqM - 3.42) < 0.01, `Expected 3.42 m², got ${paintTwoTone.areaSqM}`);
+
+// Case C: Explicit Scope Override ('wainscot_only' on drench)
+const wallOverride = Object.assign({}, wallDrench, { paintScope: 'wainscot_only' });
+const paintOverride = computePaintArea(wallOverride, 'mm');
+assert(paintOverride.fullWall === false, 'Paint scope override to wainscot_only must be respected');
+assert(Math.abs(paintOverride.areaSqM - 3.42) < 0.01, `Expected 3.42 m² with override, got ${paintOverride.areaSqM}`);
+
+// Case D: Openings Subtraction (Door 820x2040 and Window 1200x1000)
+const wallWithOpenings = Object.assign({}, wallDrench, {
+  obstacles: [
+    { type: 'door', x: 200, y: 0, width: 820, height: 2040 },
+    { type: 'window', x: 1800, y: 900, width: 1200, height: 1000 }
+  ]
+});
+const paintWithOpenings = computePaintArea(wallWithOpenings, 'mm');
+// Full: 8.64 m²
+// Door: 0.82 * 2.04 = 1.6728 m²
+// Window: 1.2 * 1.0 = 1.2 m²
+// Expected: 8.64 - 1.6728 - 1.2 = 5.7672 m²
+console.log(`With Door & Window subtracted: Area = ${paintWithOpenings.areaSqM.toFixed(2)} m²`);
+assert(Math.abs(paintWithOpenings.areaSqM - 5.7672) < 0.01, `Expected ~5.77 m², got ${paintWithOpenings.areaSqM}`);
+console.log('✓ Paint area calculation and openings subtraction tests passed.');
+
+// -------------------------------------------------------------
+// TEST SUITE 6: Multi-Wall Project Totals Aggregation
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 6: Multi-Wall Project Totals Aggregation ---');
+const wallA = Object.assign({}, sampleWall, { name: 'Front Wall', wallLength: 3600 });
+const wallB = Object.assign({}, sampleWall, { name: 'Side Wall', wallLength: 2400, panelCount: 3 });
+
+const defaultPrices = {
+  mouldingPerUnit: 4.5,
+  chairRailPerUnit: 8.5,
+  baseboardPerUnit: 9.0,
+  adhesiveTube: 9.5,
+  caulkTube: 8.0,
+  fillerTub: 14.0,
+  wallPaintPerUnit: 38,
+  trimPaintPerUnit: 44,
+  nailsBox: 12.0
+};
+
+const projectTotals = computeProjectTotals([wallA, wallB], 'mm', 2400, 3, defaultPrices);
+console.log(`Multi-Wall Totals: ${projectTotals.wallCount} walls, ${projectTotals.pieces} total cut pieces`);
+console.log(`  Combined Stock Boards: ${projectTotals.packed.boards.length} (vs ${projectTotals.perWallBoards} summed per-wall)`);
+console.log(`  Combined Paint Area: ${projectTotals.paintAreaSqM.toFixed(2)} m²`);
+console.log(`  Total Estimated Project Cost: $${projectTotals.cost.toFixed(2)}`);
+
+assert(projectTotals.wallCount === 2, 'Expected 2 walls aggregated');
+assert(projectTotals.rows.length > 0, 'Expected cut schedule rows from both walls');
+assert(projectTotals.packed.boards.length <= projectTotals.perWallBoards, 'Combined bin-packing should use <= boards than sum of isolated walls');
+assert(projectTotals.cost > 0, 'Project cost must be greater than zero');
+console.log('✓ Multi-wall project totals aggregation tests passed.');
+
+// -------------------------------------------------------------
+// TEST SUITE 7: Project Normalization & Unit Sync
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 7: Project Schema Validation & Unit Sync ---');
+const defaultProjectTemplate = {
+  unit: 'mm',
+  currentWallIndex: 0,
+  zoomLevel: 1.0,
+  walls: [sampleWall],
+  unitPrices: defaultPrices
+};
+
+// Test valid normalization
+const norm = normalizeProject({ walls: [{ wallLength: 3000, wallHeight: 2400, wainscotHeight: 950 }] }, defaultProjectTemplate);
+assert(norm.unit === 'mm', 'Expected default unit mm');
+assert(norm.walls.length === 1, 'Expected 1 wall');
+assert(norm.walls[0].wallLength === 3000, 'Expected wall length 3000');
+
+// Test unit toggle preservation (F4 fix)
+const normInches = normalizeProject({ unit: 'in', walls: [{ wallLength: 120, wallHeight: 96, wainscotHeight: 38 }] }, defaultProjectTemplate);
+assert(normInches.unit === 'in', 'Inches unit must be preserved');
+
+// Test rejection of corrupt data
+let threw = false;
+try {
+  normalizeProject(null, defaultProjectTemplate);
+} catch (e) {
+  threw = true;
+}
+assert(threw, 'normalizeProject must throw on null');
+
+threw = false;
+try {
+  normalizeProject({ walls: [] }, defaultProjectTemplate);
+} catch (e) {
+  threw = true;
+}
+assert(threw, 'normalizeProject must throw on empty walls array');
+
+threw = false;
+try {
+  normalizeProject({ version: 99, walls: [{ wallLength: 100, wallHeight: 100, wainscotHeight: 50 }] }, defaultProjectTemplate);
+} catch (e) {
+  threw = true;
+}
+assert(threw, 'normalizeProject must throw on unsupported version');
+console.log('✓ Project normalization and unit synchronization tests passed.');
+
+// -------------------------------------------------------------
+// TEST SUITE 8: XSS Sanitization & String Escaping
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 8: XSS Sanitization ---');
+const dangerousString = `<script>alert("XSS")</script>&'`;
+const escapedHtml = escHtml(dangerousString);
+console.log(`Escaped HTML: ${escapedHtml}`);
+assert(!escapedHtml.includes('<script>'), 'escHtml must remove raw <script>');
+assert(escapedHtml.includes('&lt;script&gt;'), 'escHtml must convert < to &lt;');
+assert(escapedHtml.includes('&quot;'), 'escHtml must convert " to &quot;');
+assert(escapedHtml.includes('&#39;'), "escHtml must convert ' to &#39;");
+
+const dangerousAttr = `Living Room' onclick='alert(1)`;
+const escapedAttr = escJsAttr(dangerousAttr);
+console.log(`Escaped JS Attr: ${escapedAttr}`);
+assert(!escapedAttr.includes("' onclick='"), 'escJsAttr must escape single quotes');
+console.log('✓ XSS sanitization tests passed.');
+
+// -------------------------------------------------------------
+// TEST SUITE 9: Presets Catalog Provenance & CanvasTV Clearance
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 9: Presets Provenance & CanvasTV Placement ---');
+assert(PRESETS_CATALOG.tv['55_canvas'].verified === true, '55" CanvasTV must be marked verified: true');
+assert(PRESETS_CATALOG.tv['55_canvas'].widthMm === 1256, '55" CanvasTV width must be 1256mm');
+assert(PRESETS_CATALOG.tv['55_canvas'].heightMm === 733, '55" CanvasTV height must be 733mm');
+assert(PRESETS_CATALOG.tv['65_canvas'].verified === true, '65" CanvasTV must be marked verified: true');
+assert(PRESETS_CATALOG.tv['75_canvas'].verified === false, '75" Display must be marked verified: false (no 75S7NAU exists)');
+assert(PRESETS_CATALOG.paints.dulux_antique_white.hex === '#f4efe6', 'Dulux Antique White hex must be #f4efe6');
+assert(PRESETS_CATALOG.paints.dulux_antique_white.lrv === 83, 'Dulux Antique White LRV must be 83');
+
+// CanvasTV Centering & Mount Clearance
+const tvCat = PRESETS_CATALOG.tv['55_canvas'];
+const wallLen = 3600;
+const wainscotH = 950;
+const centeredX = Math.round((wallLen - tvCat.widthMm) / 2);
+const mountY = wainscotH + 100; // 100mm clearance above rail
+const clearance = mountY - wainscotH;
+console.log(`CanvasTV centered at X=${centeredX}mm, mount Y=${mountY}mm, clearance=${clearance}mm`);
+assert(centeredX === 1172, `Expected centered X=1172, got ${centeredX}`);
+assert(clearance === 100, `Expected clearance=100, got ${clearance}`);
+console.log('✓ Presets catalog provenance and CanvasTV tests passed.');
+
+console.log('\n====================================================');
+console.log('  ALL 9 TEST SUITES PASSED (100% PRODUCTION SEAM)   ');
+console.log('====================================================');

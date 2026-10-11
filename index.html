@@ -739,7 +739,7 @@
         background: #fff !important;
         color: #000 !important;
       }
-      header, .sidebar, .canvas-toolbar, .drawer-tabs, .btn, .header-actions {
+      header, .sidebar, .canvas-toolbar, .drawer-tabs, .btn, .header-actions, #autosave-status, .zoom-controls {
         display: none !important;
       }
       .app-layout {
@@ -748,28 +748,61 @@
       }
       .work-area {
         background: #fff !important;
+        padding: 0 !important;
+      }
+      .print-header {
+        display: block !important;
       }
       .canvas-container {
         padding: 0 !important;
-        height: 400px !important;
+        height: auto !important;
+        max-height: 420px !important;
+        page-break-after: avoid !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 4px;
+        margin-bottom: 16px;
       }
       svg#elevation-svg {
         filter: none !important;
+        max-width: 100% !important;
+        height: auto !important;
       }
       .bottom-drawer {
+        display: block !important;
         height: auto !important;
         background: #fff !important;
         border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #tab-content-cutlist {
+        display: block !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 20px;
+      }
+      #tab-content-supplies {
+        display: block !important;
+        page-break-inside: avoid !important;
+      }
+      #tab-content-stock, #tab-content-cost, #tab-content-project-totals {
+        display: none !important;
+      }
+      .cut-table, .cost-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 11px !important;
       }
       .cut-table th, .cut-table td, .cost-table th, .cost-table td {
         color: #000 !important;
-        border-color: #ddd !important;
+        border: 1px solid #cbd5e1 !important;
         background: #fff !important;
+        padding: 4px 8px !important;
       }
-      .stock-board-card {
+      .material-card {
+        border: 1px solid #cbd5e1 !important;
         background: #fff !important;
-        border: 1px solid #ccc !important;
         color: #000 !important;
+        page-break-inside: avoid !important;
       }
     }
   </style>
@@ -805,8 +838,16 @@
         <option value="beadboard">Cottage Beadboard &amp; Dado</option>
       </select>
 
+      <!-- Undo / Redo controls -->
+      <div style="display: flex; gap: 4px;">
+        <button class="btn btn-sm" id="btn-undo" onclick="undo()" title="Undo (Cmd+Z)" disabled>&larr; Undo</button>
+        <button class="btn btn-sm" id="btn-redo" onclick="redo()" title="Redo (Cmd+Shift+Z)" disabled>&rarr; Redo</button>
+      </div>
+
       <!-- Theme Toggle -->
       <button class="btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Theme">Theme: Light</button>
+
+      <span id="autosave-status" style="font-size: 11px; opacity: 0.7; padding: 0 4px;" title="Automatic LocalStorage save state">Draft saved</span>
 
       <button class="btn" onclick="exportCSV()">Download CSV</button>
       <button class="btn" onclick="exportProjectJSON()">Save JSON</button>
@@ -814,6 +855,7 @@
         Load JSON
         <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importProjectJSON(event)">
       </label>
+      <button class="btn" onclick="resetProjectToDefault()" title="Reset to default clean template" style="opacity: 0.8;">Reset</button>
       <button class="btn btn-primary" onclick="window.print()">Print Plan</button>
     </div>
   </header>
@@ -1114,6 +1156,17 @@
           </div>
 
           <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label>Paint Calculation Scope</label>
+              <select id="in-paint-scope" onchange="onPaintScopeChange()">
+                <option value="auto" selected>Auto (Full Wall for Colour Drench)</option>
+                <option value="full_wall">Full Wall (Floor to Ceiling)</option>
+                <option value="wainscot_only">Wainscot Only (Below Chair Rail)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label style="cursor: pointer;">
                 <span>Show Dimension Annotations</span>
@@ -1155,6 +1208,20 @@
         </div>
       </div>
 
+      <!-- Workshop Print Header (visible only on @media print) -->
+      <div class="print-header" id="print-header" style="display: none; padding: 12px 0 8px 0; margin-bottom: 12px; border-bottom: 2px solid #0f172a;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">Wainscot Studio &mdash; Workshop Elevation &amp; Cut Plan</h1>
+            <div id="print-wall-summary" style="margin-top: 4px; font-size: 13px; color: #334155; font-weight: 500;"></div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #64748b; line-height: 1.4;">
+            <div>Single-Room Architectural Carpentry</div>
+            <div id="print-date"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Elevation SVG Canvas -->
       <div class="canvas-container" id="canvas-wrapper">
         <svg id="elevation-svg" xmlns="http://www.w3.org/2000/svg">
@@ -1170,6 +1237,7 @@
           <div class="drawer-tab" data-tab="stock" onclick="setDrawerTab('stock')">Cutting Stock Optimizer</div>
           <div class="drawer-tab" data-tab="supplies" onclick="setDrawerTab('supplies')">Hardware &amp; Materials</div>
           <div class="drawer-tab" data-tab="cost" onclick="setDrawerTab('cost')">Cost Estimator</div>
+          <div class="drawer-tab" data-tab="project-totals" onclick="setDrawerTab('project-totals')" style="border-left: 2px solid var(--accent); font-weight: 600;">Project Totals (All Walls)</div>
         </div>
 
         <!-- Cut List Tab -->
@@ -1245,6 +1313,60 @@
           </table>
         </div>
 
+        <!-- Project Totals (All Walls) Tab -->
+        <div class="drawer-content" id="tab-content-project-totals" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700;">Whole Project Materials &amp; Procurement Summary</h3>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;" id="project-totals-subtitle">Aggregating all room walls</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-sm" onclick="exportAllWallsCSV()" title="Download consolidated CSV for all walls">Download All Walls CSV</button>
+            </div>
+          </div>
+
+          <!-- Project Summary Cards Grid -->
+          <div class="materials-grid" id="project-totals-grid" style="margin-bottom: 20px;">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Combined Cutting Stock Visualizer -->
+          <div style="background: var(--bg-surface); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div>
+                <strong>Combined Stock Board Optimization (All Walls)</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">Bin-packed across all room walls simultaneously for maximum timber yield</div>
+              </div>
+              <div id="project-stock-summary-stats" style="font-size: 12px; font-weight: 600; color: var(--text-color);"></div>
+            </div>
+            <div class="stock-board-list" id="project-stock-visualizer">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Combined All-Walls Cut Schedule Table -->
+          <div style="margin-top: 10px;">
+            <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Consolidated Cut List (All Walls)</div>
+            <table class="cut-table" id="project-cut-list-table">
+              <thead>
+                <tr>
+                  <th>Wall</th>
+                  <th>Piece Tag</th>
+                  <th>Component</th>
+                  <th>Length</th>
+                  <th>Width</th>
+                  <th>Ends / Cut</th>
+                  <th>Quantity</th>
+                  <th>Total Linear</th>
+                </tr>
+              </thead>
+              <tbody id="project-cut-list-tbody">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </section>
 
     </main>
@@ -1273,6 +1395,7 @@
           wallSheen: 'low_sheen',
           trimColor: '#f4efe6',
           trimSheen: 'semi_gloss',
+          paintScope: 'auto', // 'auto' | 'full_wall' | 'wainscot_only'
           trimWidth: 40,
           innerGap: 60,
           gridRows: 2,
@@ -1315,18 +1438,28 @@
         nailsBox: 12.0
       }
     };
+    const DEFAULT_STATE_JSON = JSON.stringify(state);
 
     // Unit conversion constants
     const MM_TO_INCH = 1 / 25.4;
     const INCH_TO_MM = 25.4;
+
+    // Refresh unit buttons/labels to match state.unit WITHOUT converting values
+    // (used by setUnit after converting, and by import/undo/restore).
+    function applyUnitUI(u) {
+      document.getElementById('unit-mm-btn').classList.toggle('active', u === 'mm');
+      document.getElementById('unit-in-btn').classList.toggle('active', u === 'in');
+      document.querySelectorAll('.unit-label').forEach(el => el.textContent = u);
+      document.getElementById('wall-len-unit-lbl').textContent = `(${u})`;
+      document.getElementById('wall-hgt-unit-lbl').textContent = `(${u})`;
+    }
 
     function setUnit(u) {
       if (state.unit === u) return;
       const oldUnit = state.unit;
       state.unit = u;
 
-      document.getElementById('unit-mm-btn').classList.toggle('active', u === 'mm');
-      document.getElementById('unit-in-btn').classList.toggle('active', u === 'in');
+      applyUnitUI(u);
 
       // Update UI unit labels
       document.querySelectorAll('.unit-label').forEach(el => el.textContent = u);
@@ -1362,6 +1495,7 @@
       updateCalculation();
     }
 
+    /* === CORE CALCULATOR ENGINE START (utils) === */
     function roundUnit(val, unit) {
       if (unit === 'in') {
         return Math.round(val * 16) / 16;
@@ -1369,8 +1503,9 @@
       return Math.round(val);
     }
 
-    function formatLength(val, showUnit = true) {
-      if (state.unit === 'in') {
+    function formatLength(val, showUnit = true, unitOverride = null) {
+      const u = unitOverride || (typeof state !== 'undefined' && state && state.unit ? state.unit : 'mm');
+      if (u === 'in') {
         const whole = Math.floor(val);
         const frac = val - whole;
         const sixteenths = Math.round(frac * 16);
@@ -1392,6 +1527,15 @@
       }
       return showUnit ? `${Math.round(val)} mm` : `${Math.round(val)}`;
     }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function escJsAttr(str) {
+      return escHtml(String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+    }
+    /* === CORE CALCULATOR ENGINE END (utils) === */
 
     function getActiveWall() {
       return state.walls[state.currentWallIndex] || state.walls[0];
@@ -1415,6 +1559,8 @@
       if (trimColorEl) trimColorEl.value = w.trimColor || '#f4efe6';
       const trimSheenEl = document.getElementById('in-trim-sheen');
       if (trimSheenEl) trimSheenEl.value = w.trimSheen || 'semi_gloss';
+      const paintScopeEl = document.getElementById('in-paint-scope');
+      if (paintScopeEl) paintScopeEl.value = w.paintScope || 'auto';
       document.getElementById('in-trim-width').value = w.trimWidth;
       document.getElementById('in-inner-gap').value = w.innerGap;
       document.getElementById('in-grid-rows').value = w.gridRows;
@@ -1456,6 +1602,8 @@
       if (trimColorEl) w.trimColor = trimColorEl.value;
       const trimSheenEl = document.getElementById('in-trim-sheen');
       if (trimSheenEl) w.trimSheen = trimSheenEl.value;
+      const paintScopeEl = document.getElementById('in-paint-scope');
+      if (paintScopeEl) w.paintScope = paintScopeEl.value;
       w.trimWidth = parseFloat(document.getElementById('in-trim-width').value) || 20;
       w.innerGap = parseFloat(document.getElementById('in-inner-gap').value) || 40;
       w.gridRows = parseInt(document.getElementById('in-grid-rows').value, 10) || 1;
@@ -1537,66 +1685,199 @@
       updateCalculation();
     }
 
+    /* === CORE CALCULATOR ENGINE START (catalog) === */
+    var PRESETS_CATALOG = {
+      styles: {
+        classic_picture_frame: {
+          id: 'classic_picture_frame',
+          name: 'Classic Picture Frame (Shadow Box)',
+          style: 'picture_frame',
+          wainscotHeightMm: 950,
+          trimWidthMm: 40,
+          spacingMm: 100,
+          panelCount: 4,
+          marginMode: 'equal',
+          twoTier: false,
+          verified: true,
+          source: 'Georgian/Colonial ratio (~1/3 dado height, 40mm astragal moulding)'
+        },
+        double_picture_frame: {
+          id: 'double_picture_frame',
+          name: 'Double Picture Frame (Nested Box)',
+          style: 'double_picture_frame',
+          wainscotHeightMm: 1000,
+          trimWidthMm: 38,
+          innerGapMm: 60,
+          spacingMm: 120,
+          panelCount: 4,
+          marginMode: 'equal',
+          twoTier: false,
+          verified: true,
+          source: 'Parisian Neoclassical nested moulding detail with 60mm inner spacing'
+        },
+        board_and_batten: {
+          id: 'board_and_batten',
+          name: 'Craftsman Board & Batten',
+          style: 'board_and_batten',
+          wainscotHeightMm: 1400,
+          trimWidthMm: 75,
+          spacingMm: 320,
+          panelCount: 8,
+          marginMode: 'equal',
+          twoTier: false,
+          verified: true,
+          source: 'American Craftsman / Arts & Crafts ~1400mm high with 75mm (1x3) battens'
+        },
+        grid_batten: {
+          id: 'grid_batten',
+          name: 'Modern Grid Board & Batten',
+          style: 'grid_batten',
+          wainscotHeightMm: 1800,
+          trimWidthMm: 75,
+          gridRailWidthMm: 75,
+          gridRows: 3,
+          spacingMm: 350,
+          panelCount: 6,
+          marginMode: 'equal',
+          verified: true,
+          source: 'Contemporary 3-row grid accent wall with 75mm MDF battens'
+        },
+        shaker_recessed: {
+          id: 'shaker_recessed',
+          name: 'Shaker Recessed Panel',
+          style: 'recessed_shaker',
+          wainscotHeightMm: 950,
+          trimWidthMm: 90,
+          spacingMm: 450,
+          panelCount: 5,
+          marginMode: 'equal',
+          verified: true,
+          source: 'Traditional Shaker stile & rail wainscoting with 90mm flat stiles'
+        },
+        raised_panel: {
+          id: 'raised_panel',
+          name: 'Traditional Raised Panel',
+          style: 'raised_panel',
+          wainscotHeightMm: 950,
+          trimWidthMm: 90,
+          spacingMm: 450,
+          panelCount: 4,
+          marginMode: 'equal',
+          verified: true,
+          source: 'Formal Colonial raised bevel edge profile'
+        },
+        beadboard: {
+          id: 'beadboard',
+          name: 'Cottage Beadboard',
+          style: 'beadboard',
+          wainscotHeightMm: 900,
+          trimWidthMm: 45,
+          spacingMm: 50,
+          panelCount: 10,
+          marginMode: 'equal',
+          verified: true,
+          source: 'Victorian cottage beadboard tongue-and-groove planking profile'
+        }
+      },
+      tv: {
+        '55_canvas': {
+          id: '55_canvas',
+          name: '55" Hisense CanvasTV (55S7NAU)',
+          widthMm: 1256,
+          heightMm: 733,
+          verified: true,
+          source: 'Hisense Australia Official Specification Sheet 55S7NAU (1256 x 733 x 33 mm with frame)'
+        },
+        '65_canvas': {
+          id: '65_canvas',
+          name: '65" Hisense CanvasTV (65S7NAU)',
+          widthMm: 1475,
+          heightMm: 856,
+          verified: true,
+          source: 'Hisense Australia Official Specification Sheet 65S7NAU (1475 x 856 x 33 mm with frame)'
+        },
+        '75_canvas': {
+          id: '75_canvas',
+          name: '75" 4K Display (Generic)',
+          widthMm: 1675,
+          heightMm: 960,
+          verified: false,
+          source: 'Generic 75" diagonal 16:9 outer bounds (Note: no Hisense S7NAU 75" model exists)'
+        }
+      },
+      paints: {
+        dulux_antique_white: {
+          id: 'dulux_antique_white',
+          name: 'Dulux Antique White U.S.A.',
+          hex: '#f4efe6',
+          lrv: 83,
+          verified: true,
+          source: 'Dulux Australia Colour Atlas (Antique White U.S.A. SW1G1, LRV approx 83)',
+          coverageSqMPerL: 11,
+          coverageVerified: false,
+          coverageSource: 'Dulux Wash&Wear standard application rate (11-16 m²/L per coat, 2 coats planned)'
+        },
+        pure_white: {
+          id: 'pure_white',
+          name: 'Pure White',
+          hex: '#f8fafc',
+          verified: false,
+          source: 'Generic architectural pure white'
+        },
+        off_white: {
+          id: 'off_white',
+          name: 'Off White',
+          hex: '#f1f5f9',
+          verified: false,
+          source: 'Generic architectural off-white'
+        },
+        warm_cream: {
+          id: 'warm_cream',
+          name: 'Warm Cream',
+          hex: '#fdfbf7',
+          verified: false,
+          source: 'Generic warm cream'
+        },
+        light_grey: {
+          id: 'light_grey',
+          name: 'Light Grey',
+          hex: '#e2e8f0',
+          verified: false,
+          source: 'Generic slate grey'
+        },
+        soft_coastal_mist: {
+          id: 'soft_coastal_mist',
+          name: 'Soft Coastal Mist',
+          hex: '#e0e7ff',
+          verified: false,
+          source: 'Generic coastal accent'
+        }
+      }
+    };
+    /* === CORE CALCULATOR ENGINE END (catalog) === */
+
     function applyPreset(name) {
       const w = getActiveWall();
       const u = state.unit;
       const isMm = u === 'mm';
+      const cat = PRESETS_CATALOG.styles[name];
+      if (!cat) return;
 
-      if (name === 'classic_picture_frame') {
-        w.style = 'picture_frame';
-        w.wainscotHeight = isMm ? 950 : 38;
-        w.trimWidth = isMm ? 40 : 1.5;
-        w.spacing = isMm ? 100 : 4;
-        w.panelCount = 4;
-        w.marginMode = 'equal';
-        w.twoTier = false;
-      } else if (name === 'double_picture_frame') {
-        w.style = 'double_picture_frame';
-        w.wainscotHeight = isMm ? 1000 : 40;
-        w.trimWidth = isMm ? 38 : 1.5;
-        w.innerGap = isMm ? 60 : 2.5;
-        w.spacing = isMm ? 120 : 4.75;
-        w.panelCount = 4;
-        w.marginMode = 'equal';
-        w.twoTier = false;
-      } else if (name === 'board_and_batten') {
-        w.style = 'board_and_batten';
-        w.wainscotHeight = isMm ? 1400 : 56;
-        w.trimWidth = isMm ? 75 : 3;
-        w.spacing = isMm ? 320 : 13;
-        w.panelCount = 8;
-        w.marginMode = 'equal';
-        w.twoTier = false;
-      } else if (name === 'grid_batten') {
-        w.style = 'grid_batten';
-        w.wainscotHeight = isMm ? 1800 : 72;
-        w.trimWidth = isMm ? 75 : 3;
-        w.gridRailWidth = isMm ? 75 : 3;
-        w.gridRows = 3;
-        w.spacing = isMm ? 350 : 14;
-        w.panelCount = 6;
-        w.marginMode = 'equal';
-      } else if (name === 'shaker_recessed') {
-        w.style = 'recessed_shaker';
-        w.wainscotHeight = isMm ? 950 : 38;
-        w.trimWidth = isMm ? 90 : 3.5;
-        w.spacing = isMm ? 450 : 18;
-        w.panelCount = 5;
-        w.marginMode = 'equal';
-      } else if (name === 'raised_panel') {
-        w.style = 'raised_panel';
-        w.wainscotHeight = isMm ? 950 : 38;
-        w.trimWidth = isMm ? 90 : 3.5;
-        w.spacing = isMm ? 450 : 18;
-        w.panelCount = 4;
-        w.marginMode = 'equal';
-      } else if (name === 'beadboard') {
-        w.style = 'beadboard';
-        w.wainscotHeight = isMm ? 900 : 36;
-        w.trimWidth = isMm ? 45 : 1.75;
-        w.spacing = isMm ? 50 : 2;
-        w.panelCount = 10;
-        w.marginMode = 'equal';
+      w.style = cat.style;
+      w.wainscotHeight = isMm ? cat.wainscotHeightMm : roundUnit(cat.wainscotHeightMm * MM_TO_INCH, 'in');
+      w.trimWidth = isMm ? cat.trimWidthMm : roundUnit(cat.trimWidthMm * MM_TO_INCH, 'in');
+      w.spacing = isMm ? cat.spacingMm : roundUnit(cat.spacingMm * MM_TO_INCH, 'in');
+      w.panelCount = cat.panelCount;
+      w.marginMode = cat.marginMode;
+      w.twoTier = !!cat.twoTier;
+      if (cat.innerGapMm !== undefined) {
+        w.innerGap = isMm ? cat.innerGapMm : roundUnit(cat.innerGapMm * MM_TO_INCH, 'in');
+      }
+      if (cat.gridRailWidthMm !== undefined) {
+        w.gridRailWidth = isMm ? cat.gridRailWidthMm : roundUnit(cat.gridRailWidthMm * MM_TO_INCH, 'in');
+      }
+      if (cat.gridRows !== undefined) {
+        w.gridRows = cat.gridRows;
       }
 
       syncInputsFromState();
@@ -1620,11 +1901,11 @@
         tab.className = `wall-tab ${idx === state.currentWallIndex ? 'active' : ''}`;
         tab.title = 'Click to switch. Double-click or click pencil to rename.';
         tab.innerHTML = `
-          <span>${w.name}</span>
-          <button class="wall-tab-edit-btn" onclick="renameWallPrompt(event, ${idx})" title="Rename ${w.name}" style="background:none; border:none; color:inherit; cursor:pointer; opacity:0.6; font-size:12px; padding:0 2px; line-height:1; display:flex; align-items:center;">
+          <span>${escHtml(w.name)}</span>
+          <button class="wall-tab-edit-btn" onclick="renameWallPrompt(event, ${idx})" title="Rename ${escJsAttr(w.name)}" style="background:none; border:none; color:inherit; cursor:pointer; opacity:0.6; font-size:12px; padding:0 2px; line-height:1; display:flex; align-items:center;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </button>
-          ${state.walls.length > 1 ? `<span onclick="deleteWall(event, ${idx})" title="Delete wall" style="opacity: 0.6; font-weight: bold; margin-left: 2px; cursor:pointer;">&times;</span>` : ''}
+          ${state.walls.length > 1 ? `<span onclick="deleteWall(event, ${idx})" title="Delete ${escJsAttr(w.name)}" style="opacity: 0.6; font-weight: bold; margin-left: 2px; cursor:pointer;">&times;</span>` : ''}
         `;
         tab.ondblclick = (e) => {
           renameWallPrompt(e, idx);
@@ -1736,13 +2017,18 @@
               <div class="form-group" style="flex: 1;">
                 <label>CanvasTV / Display Model Preset</label>
                 <select onchange="applyTVPreset(${idx}, this.value)">
-                  <option value="55_canvas" ${obs.tvPreset === '55_canvas' || !obs.tvPreset ? 'selected' : ''}>55" Hisense CanvasTV (1256 &times; 733 mm)</option>
-                  <option value="65_canvas" ${obs.tvPreset === '65_canvas' ? 'selected' : ''}>65" Hisense CanvasTV (1475 &times; 856 mm)</option>
-                  <option value="75_canvas" ${obs.tvPreset === '75_canvas' ? 'selected' : ''}>75" 4K Display (1675 &times; 960 mm)</option>
+                  <option value="55_canvas" ${obs.tvPreset === '55_canvas' || !obs.tvPreset ? 'selected' : ''}>55" Hisense CanvasTV (1256 &times; 733 mm) &bull; Verified 55S7NAU</option>
+                  <option value="65_canvas" ${obs.tvPreset === '65_canvas' ? 'selected' : ''}>65" Hisense CanvasTV (1475 &times; 856 mm) &bull; Verified 65S7NAU</option>
+                  <option value="75_canvas" ${obs.tvPreset === '75_canvas' ? 'selected' : ''}>75" 4K Display (1675 &times; 960 mm) &bull; Unverified Generic</option>
                   <option value="custom" ${obs.tvPreset === 'custom' ? 'selected' : ''}>Custom TV Dimensions</option>
                 </select>
               </div>
             </div>
+            ${obs.provenance ? `
+              <div style="font-size: 10px; margin-bottom: 8px; padding: 4px 6px; border-radius: 4px; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); color: var(--text-muted); line-height: 1.3;">
+                <span style="font-weight: 600; color: ${obs.verified ? '#059669' : '#d97706'};">${obs.verified ? '✓ Verified Model' : '⚠ Generic / Unverified'}:</span> ${escHtml(obs.provenance)}
+              </div>
+            ` : ''}
             <div style="display: flex; gap: 6px; margin-bottom: 8px;">
               <button class="btn btn-sm" onclick="centerObstacleX(${idx})" title="Center TV horizontally on wall">Center on Wall</button>
               <button class="btn btn-sm" onclick="alignTVAboveWainscot(${idx})" title="Mount TV with 100mm gap above wainscoting chair rail">Mount Above Rail</button>
@@ -1778,13 +2064,6 @@
         `;
         container.appendChild(item);
       });
-    }
-
-    function escHtml(str) {
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-    function escJsAttr(str) {
-      return escHtml(String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
     }
 
     function updateObstacleText(idx, field, val) {
@@ -1830,18 +2109,13 @@
       const isMm = state.unit === 'mm';
       obs.type = 'tv';
       obs.tvPreset = preset;
-      if (preset === '55_canvas') {
-        if (!obs.customName) obs.name = '55" CanvasTV (Hisense S7NAU)';
-        obs.width = isMm ? 1256 : roundUnit(1256 * MM_TO_INCH, 'in');
-        obs.height = isMm ? 733 : roundUnit(733 * MM_TO_INCH, 'in');
-      } else if (preset === '65_canvas') {
-        if (!obs.customName) obs.name = '65" CanvasTV (Hisense S7NAU)';
-        obs.width = isMm ? 1475 : roundUnit(1475 * MM_TO_INCH, 'in');
-        obs.height = isMm ? 856 : roundUnit(856 * MM_TO_INCH, 'in');
-      } else if (preset === '75_canvas') {
-        if (!obs.customName) obs.name = '75" 4K Display';
-        obs.width = isMm ? 1675 : roundUnit(1675 * MM_TO_INCH, 'in');
-        obs.height = isMm ? 960 : roundUnit(960 * MM_TO_INCH, 'in');
+      const cat = PRESETS_CATALOG.tv[preset];
+      if (cat) {
+        if (!obs.customName) obs.name = cat.name;
+        obs.width = isMm ? cat.widthMm : roundUnit(cat.widthMm * MM_TO_INCH, 'in');
+        obs.height = isMm ? cat.heightMm : roundUnit(cat.heightMm * MM_TO_INCH, 'in');
+        obs.verified = cat.verified;
+        obs.provenance = cat.source;
       }
       renderObstaclesList();
       updateCalculation();
@@ -1867,20 +2141,23 @@
     function addTVObstacle() {
       const w = getActiveWall();
       const isMm = state.unit === 'mm';
-      const tvWidth = isMm ? 1256 : roundUnit(1256 * MM_TO_INCH, 'in');
-      const tvHeight = isMm ? 733 : roundUnit(733 * MM_TO_INCH, 'in');
+      const cat = PRESETS_CATALOG.tv['55_canvas'];
+      const tvWidth = isMm ? cat.widthMm : roundUnit(cat.widthMm * MM_TO_INCH, 'in');
+      const tvHeight = isMm ? cat.heightMm : roundUnit(cat.heightMm * MM_TO_INCH, 'in');
       const centerX = Math.max(0, Math.round((w.wallLength - tvWidth) / 2));
       const mountY = Math.round(w.wainscotHeight + (isMm ? 100 : 4));
 
       w.obstacles.push({
         id: 'tv-' + Date.now(),
-        name: '55" CanvasTV (Hisense S7NAU)',
+        name: cat.name,
         type: 'tv',
         tvPreset: '55_canvas',
         x: centerX,
         y: mountY,
         width: tvWidth,
-        height: tvHeight
+        height: tvHeight,
+        verified: cat.verified,
+        provenance: cat.source
       });
       renderObstaclesList();
       updateCalculation();
@@ -1918,7 +2195,11 @@
     /* Core Spacing & Geometry Calculation */
     function calculateWallGeometry() {
       syncStateFromInputs();
-      const w = getActiveWall();
+      return computeWallGeometry(getActiveWall());
+    }
+
+    /* === CORE CALCULATOR ENGINE START (geometry) === */
+    function computeWallGeometry(w) {
 
       const totalLength = w.wallLength;
       const totalHeight = w.wallHeight;
@@ -2146,6 +2427,7 @@
         isBoardAndBatten
       };
     }
+    /* === CORE CALCULATOR ENGINE END (geometry) === */
 
     /* Elevation SVG Drawing */
     function renderElevation() {
@@ -2618,8 +2900,12 @@
 
     /* Cut List Generator */
     function generateCutList(geo) {
+      return computeCutList(geo, getActiveWall());
+    }
+
+    /* === CORE CALCULATOR ENGINE START (cutlist) === */
+    function computeCutList(geo, w) {
       const cuts = [];
-      const w = getActiveWall();
       const style = w.style;
       const isBoardAndBatten = geo.isBoardAndBatten;
 
@@ -2758,6 +3044,7 @@
 
       return cuts;
     }
+    /* === CORE CALCULATOR ENGINE END (cutlist) === */
 
     function renderCutListTable(cuts) {
       const tbody = document.getElementById('cut-list-tbody');
@@ -2779,68 +3066,202 @@
       });
     }
 
-    /* Cutting Stock Optimizer (1D Bin Packing with visualizer) */
-    function runStockOptimizer(cuts) {
-      const stockLength = parseFloat(document.getElementById('in-stock-board-length').value) || (state.unit === 'mm' ? 2400 : 96);
-      const kerf = parseFloat(document.getElementById('in-saw-kerf').value) || (state.unit === 'mm' ? 3 : 0.125);
+    /* === CORE CALCULATOR ENGINE START (stock+paint) === */
+    var NON_STOCK_TAGS = ['PNL-SHEET', 'CHR-RAIL', 'BASE-BRD'];
 
-      // Extract all physical cuts into linear array
-      const flatCuts = [];
+    function buildFlatCuts(cuts, prefix) {
+      const flat = [];
       cuts.forEach(c => {
-        if (!c.tag.includes('PNL-SHEET') && !c.tag.includes('CHR-RAIL') && !c.tag.includes('BASE-BRD')) {
-          for (let i = 0; i < c.quantity; i++) {
-            flatCuts.push({
-              tag: c.tag,
-              length: c.length
-            });
-          }
+        if (NON_STOCK_TAGS.some(t => c.tag.includes(t))) return;
+        for (let i = 0; i < c.quantity; i++) {
+          flat.push({ tag: prefix ? `${prefix}: ${c.tag}` : c.tag, length: c.length });
         }
       });
+      return flat;
+    }
 
-      // Sort descending (Best-fit decreasing)
-      flatCuts.sort((a, b) => b.length - a.length);
+    // Best-fit-decreasing 1D bin packing. Pieces longer than a stock board are
+    // split into full-board segments plus a remainder (a joint is required) and
+    // reported in `oversize` so the UI can warn instead of silently overflowing.
+    function packCuts(flatCuts, stockLength, kerf) {
+      const oversize = [];
+      const pieces = [];
+      flatCuts.forEach(c => {
+        if (c.length > stockLength) {
+          const full = Math.floor(c.length / stockLength);
+          const rest = c.length - full * stockLength;
+          oversize.push({ tag: c.tag, length: c.length, joints: rest > 0 ? full : full - 1 });
+          for (let i = 0; i < full; i++) pieces.push({ tag: c.tag + ' (seg)', length: stockLength });
+          if (rest > 0) pieces.push({ tag: c.tag + ' (seg)', length: rest });
+        } else {
+          pieces.push(c);
+        }
+      });
+      pieces.sort((a, b) => b.length - a.length);
 
       const boards = [];
-      flatCuts.forEach(cutObj => {
+      pieces.forEach(cutObj => {
         const cut = cutObj.length;
         let bestBoard = -1;
         let minRemainingAfter = Infinity;
-
         for (let i = 0; i < boards.length; i++) {
           const needed = boards[i].items.length > 0 ? cut + kerf : cut;
           if (boards[i].remaining >= needed) {
             const rem = boards[i].remaining - needed;
-            if (rem < minRemainingAfter) {
-              minRemainingAfter = rem;
-              bestBoard = i;
-            }
+            if (rem < minRemainingAfter) { minRemainingAfter = rem; bestBoard = i; }
           }
         }
-
         if (bestBoard !== -1) {
           const needed = boards[bestBoard].items.length > 0 ? cut + kerf : cut;
           boards[bestBoard].remaining -= needed;
           boards[bestBoard].items.push(cutObj);
         } else {
-          boards.push({
-            boardIndex: boards.length + 1,
-            remaining: stockLength - cut,
-            items: [cutObj]
-          });
+          boards.push({ boardIndex: boards.length + 1, remaining: stockLength - cut, items: [cutObj] });
         }
       });
 
-      const totalCutLength = flatCuts.reduce((acc, c) => acc + c.length, 0);
+      const totalCutLength = pieces.reduce((acc, c) => acc + c.length, 0);
       const totalStockUsed = boards.length * stockLength;
-      const wasteLength = totalStockUsed - totalCutLength;
-      const wastePct = totalStockUsed > 0 ? ((wasteLength / totalStockUsed) * 100).toFixed(1) : 0;
+      const wastePct = totalStockUsed > 0 ? ((totalStockUsed - totalCutLength) / totalStockUsed) * 100 : 0;
+      return { boards, oversize, totalCutLength, totalStockUsed, wastePct };
+    }
 
-      // Update Summary Header
-      document.getElementById('stock-summary-stats').innerHTML =
-        `Boards Needed: <strong>${boards.length}</strong> &bull; Total Linear: <strong>${formatLength(totalStockUsed)}</strong> &bull; Scrap / Waste: <strong>${wastePct}%</strong>`;
+    // Paint area in square metres. Colour drench (wall colour == trim colour)
+    // paints floor to ceiling unless the user forces 'wainscot_only'.
+    // Doors, windows and TVs are subtracted (clipped to the painted region).
+    function computePaintArea(w, unit) {
+      const scope = w.paintScope || 'auto';
+      const drench = String(w.wallColor || '').toLowerCase() === String(w.trimColor || '').toLowerCase();
+      const full = scope === 'full_wall' || (scope === 'auto' && drench);
+      const height = full ? w.wallHeight : Math.min(w.wainscotHeight, w.wallHeight);
+      let area = w.wallLength * height;
+      (w.obstacles || []).forEach(o => {
+        if (o.type !== 'door' && o.type !== 'window' && o.type !== 'tv') return;
+        const ox = Math.max(0, Math.min(o.x + o.width, w.wallLength) - Math.max(o.x, 0));
+        const oy = Math.max(0, Math.min(o.y + o.height, height) - Math.max(o.y, 0));
+        area -= ox * oy;
+      });
+      area = Math.max(0, area);
+      const mmPerUnit = unit === 'in' ? 25.4 : 1;
+      return { areaSqM: area * mmPerUnit * mmPerUnit / 1e6, fullWall: full };
+    }
+    /* === CORE CALCULATOR ENGINE END (stock+paint) === */
+
+    /* === CORE CALCULATOR ENGINE START (project) === */
+    // Whole-project aggregation: every wall's cuts are bin-packed together
+    // (offcuts from one wall serve another) and consumables are sized from the
+    // combined totals rather than summed per wall.
+    function computeProjectTotals(walls, unit, stockLength, kerf, prices) {
+      const isMm = unit === 'mm';
+      const toMeters = isMm ? 1 / 1000 : 1 / 39.3701;
+      const toFeet = isMm ? 1 / 304.8 : 1 / 12;
+      let flat = [];
+      const rows = [];
+      let mouldingLinear = 0, chairRailLinear = 0, baseLinear = 0, pieces = 0, areaSqM = 0, perWallBoards = 0;
+      walls.forEach(w => {
+        const geo = computeWallGeometry(w);
+        const cuts = computeCutList(geo, w);
+        const wallFlat = buildFlatCuts(cuts);
+        flat = flat.concat(buildFlatCuts(cuts, w.name));
+        perWallBoards += packCuts(wallFlat, stockLength, kerf).boards.length;
+        cuts.forEach(c => {
+          rows.push(Object.assign({ wall: w.name }, c));
+          pieces += c.quantity;
+          if (c.tag.includes('CHR-RAIL')) chairRailLinear += c.totalLinear;
+          else if (c.tag.includes('BASE-BRD')) baseLinear += c.totalLinear;
+          else if (!c.tag.includes('PNL-SHEET')) mouldingLinear += c.totalLinear;
+        });
+        areaSqM += computePaintArea(w, unit).areaSqM;
+      });
+      const packed = packCuts(flat, stockLength, kerf);
+      const mouldingM = mouldingLinear * toMeters;
+      const nails = Math.round(mouldingM * 5 + pieces * 4);
+      const adhesive = Math.max(1, Math.ceil(mouldingM / 8));
+      const caulk = Math.max(1, Math.ceil((mouldingM * 2) / 15));
+      const filler = Math.max(1, Math.ceil(nails / 500));
+      const areaSqFt = areaSqM * 10.7639;
+      const wallPaintL = Math.max(1, (areaSqM * 2) / 11);
+      const wallPaintGal = Math.max(0.25, (areaSqFt * 2) / 380);
+      const trimLinear = mouldingLinear + chairRailLinear + baseLinear;
+      const trimPaintL = Math.max(0.5, (trimLinear * toMeters) / 12);
+      const trimPaintGal = Math.max(0.2, (trimLinear * toFeet) / 40);
+      const dist = isMm ? toMeters : toFeet;
+      const cost =
+        mouldingLinear * dist * prices.mouldingPerUnit +
+        chairRailLinear * dist * prices.chairRailPerUnit +
+        baseLinear * dist * prices.baseboardPerUnit +
+        adhesive * prices.adhesiveTube + caulk * prices.caulkTube + filler * prices.fillerTub +
+        Math.ceil(Number((isMm ? wallPaintL : wallPaintGal).toFixed(1))) * (prices.wallPaintPerUnit || 38) +
+        Math.ceil(Number((isMm ? trimPaintL : trimPaintGal).toFixed(1))) * (prices.trimPaintPerUnit || 44) +
+        Math.ceil(nails / 1000) * prices.nailsBox;
+      return {
+        wallCount: walls.length, rows, packed, perWallBoards,
+        mouldingLinear, chairRailLinear, baseLinear, pieces, nails, adhesive, caulk, filler,
+        paintAreaSqM: areaSqM, wallPaintL, wallPaintGal, trimPaintL, trimPaintGal, cost
+      };
+    }
+
+    // Validate + normalise an imported/restored project. Throws Error(message)
+    // on anything unusable; fills missing fields from defaults for older files.
+    function normalizeProject(raw, defaults) {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('File is not a project object');
+      if (!Array.isArray(raw.walls) || raw.walls.length === 0) throw new Error('Project contains no walls');
+      if (raw.version !== undefined && !(Number(raw.version) >= 1 && Number(raw.version) <= 1)) {
+        throw new Error('Unsupported project version ' + raw.version);
+      }
+      if (raw.unit !== undefined && raw.unit !== 'mm' && raw.unit !== 'in') throw new Error('Unit must be "mm" or "in"');
+      const tmpl = defaults.walls[0];
+      const walls = raw.walls.map((w, i) => {
+        if (!w || typeof w !== 'object' || Array.isArray(w)) throw new Error('Wall ' + (i + 1) + ' is invalid');
+        const m = Object.assign({}, JSON.parse(JSON.stringify(tmpl)), w);
+        ['wallLength', 'wallHeight', 'wainscotHeight'].forEach(k => {
+          if (!(Number(m[k]) > 0)) throw new Error('Wall ' + (i + 1) + ': ' + k + ' must be a positive number');
+          m[k] = Number(m[k]);
+        });
+        m.name = String(m.name || ('Wall ' + (i + 1)));
+        m.id = String(m.id || ('wall-' + (i + 1)));
+        m.obstacles = (Array.isArray(m.obstacles) ? m.obstacles : [])
+          .filter(o => o && typeof o === 'object')
+          .map(o => Object.assign({}, o, {
+            name: String(o.name || 'Obstacle'),
+            x: Number(o.x) || 0, y: Number(o.y) || 0,
+            width: Number(o.width) || 0, height: Number(o.height) || 0
+          }));
+        return m;
+      });
+      const idx = Number.isInteger(raw.currentWallIndex) && raw.currentWallIndex >= 0 && raw.currentWallIndex < walls.length ? raw.currentWallIndex : 0;
+      return {
+        unit: raw.unit === 'in' ? 'in' : 'mm',
+        currentWallIndex: idx,
+        zoomLevel: 1.0,
+        walls,
+        unitPrices: Object.assign({}, defaults.unitPrices, raw.unitPrices || {})
+      };
+    }
+    /* === CORE CALCULATOR ENGINE END (project) === */
+
+    /* Cutting Stock Optimizer (1D Bin Packing with visualizer) */
+    function runStockOptimizer(cuts) {
+      const stockLength = parseFloat(document.getElementById('in-stock-board-length').value) || (state.unit === 'mm' ? 2400 : 96);
+      const kerf = parseFloat(document.getElementById('in-saw-kerf').value) || (state.unit === 'mm' ? 3 : 0.125);
+      const packed = packCuts(buildFlatCuts(cuts), stockLength, kerf);
+      renderStockResult(packed, stockLength, 'stock-summary-stats', 'stock-board-visualizer');
+    }
+
+    function renderStockResult(packed, stockLength, statsId, containerId) {
+      const boards = packed.boards;
+      const totalStockUsed = packed.totalStockUsed;
+      const wastePct = packed.wastePct.toFixed(1);
+
+      let warn = '';
+      if (packed.oversize.length > 0) {
+        warn = ` &bull; <span style="color:#dc2626; font-weight:600;">${packed.oversize.length} piece(s) longer than stock board need a joint</span>`;
+      }
+      document.getElementById(statsId).innerHTML =
+        `Boards Needed: <strong>${boards.length}</strong> &bull; Total Linear: <strong>${formatLength(totalStockUsed)}</strong> &bull; Scrap / Waste: <strong>${wastePct}%</strong>${warn}`;
 
       // Render Visualizer Cards
-      const container = document.getElementById('stock-board-visualizer');
+      const container = document.getElementById(containerId);
       container.innerHTML = '';
 
       if (boards.length === 0) {
@@ -2859,8 +3280,8 @@
           const pct = (item.length / stockLength) * 100;
           const col = colors[(bIdx + itemIdx) % colors.length];
           segmentsMarkup += `
-            <div class="cut-segment" style="width: ${pct}%; background-color: ${col};" title="${item.tag}: ${formatLength(item.length)}">
-              ${item.tag} (${formatLength(item.length, false)})
+            <div class="cut-segment" style="width: ${pct}%; background-color: ${col};" title="${escHtml(item.tag)}: ${formatLength(item.length)}">
+              ${escHtml(item.tag)} (${formatLength(item.length, false)})
             </div>
           `;
         });
@@ -2919,8 +3340,11 @@
       // Wood filler / spackle: 1 small tub handles up to 500 nail holes
       const woodFillerTubs = Math.max(1, Math.ceil(estNails / 500));
 
-      // Surface Area & Linear Footage for Paint:
-      const wallAreaSqM = (geo.wallLength * geo.wainscotHeight) / (1000 * 1000);
+      // Surface Area & Linear Footage for Paint (drench-aware, openings subtracted, unit-correct):
+      const w = getActiveWall();
+      const paintArea = computePaintArea(w, state.unit);
+      const wallAreaSqM = paintArea.areaSqM;
+
       const wallAreaSqFt = wallAreaSqM * 10.7639;
       // Wall Paint (Dulux Wash&Wear Low Sheen): 2 coats (~11 m²/L or ~380 sq ft/gal)
       const wallPaintLiters = Math.max(1, ((wallAreaSqM * 2) / 11)).toFixed(1);
@@ -3066,6 +3490,10 @@
       renderCutListTable(cuts);
       runStockOptimizer(cuts);
       calculateMaterialsAndCost(geo, cuts);
+      // Project totals are computed lazily, only while that tab is visible.
+      const totalsTab = document.getElementById('tab-content-project-totals');
+      if (totalsTab && totalsTab.style.display === 'block') renderProjectTotals();
+      scheduleCommit();
     }
 
     /* Drawer Tab Switching */
@@ -3076,6 +3504,7 @@
       document.querySelectorAll('.drawer-content').forEach(c => {
         c.style.display = c.id === `tab-content-${tabId}` ? 'block' : 'none';
       });
+      if (tabId === 'project-totals') renderProjectTotals();
     }
 
     /* Tooltip */
@@ -3123,7 +3552,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `wainscot-cut-list-${state.walls[state.currentWallIndex].name.toLowerCase().replace(/\\s+/g, '-')}.csv`;
+      a.download = `wainscot-cut-list-${state.walls[state.currentWallIndex].name.toLowerCase().replace(/\s+/g, '-')}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -3131,38 +3560,235 @@
     }
 
     /* JSON Project Export / Import */
-    function exportProjectJSON() {
-      const jsonStr = JSON.stringify(state, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
+    function downloadBlob(content, mime, filename) {
+      const blob = new Blob([content], { type: mime });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'wainscot-project.json';
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
 
+    function exportProjectJSON() {
+      syncStateFromInputs();
+      downloadBlob(JSON.stringify(Object.assign({ version: 1 }, state), null, 2), 'application/json', 'wainscot-project.json');
+    }
+
+    // Validates and applies a project object. Throws (state untouched) if invalid.
+    function loadProjectObject(raw) {
+      const normalized = normalizeProject(raw, JSON.parse(DEFAULT_STATE_JSON));
+      Object.assign(state, normalized);
+      applyUnitUI(state.unit);
+      syncInputsFromState();
+      updateCalculation();
+    }
+
     function importProjectJSON(event) {
-      const file = event.target.files[0];
+      const input = event.target;
+      const file = input.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
-          const loaded = JSON.parse(e.target.result);
-          if (loaded.walls && Array.isArray(loaded.walls)) {
-            Object.assign(state, loaded);
-            syncInputsFromState();
-            setUnit(state.unit);
-            updateCalculation();
-          }
+          loadProjectObject(JSON.parse(e.target.result));
         } catch (err) {
-          alert('Invalid project JSON file');
+          alert('Could not load project: ' + (err instanceof SyntaxError ? 'file is not valid JSON' : err.message));
         }
+        input.value = '';
       };
       reader.readAsText(file);
     }
+
+    /* Autosave + Undo/Redo (snapshot history, debounced) */
+    const STORAGE_KEY = 'wainscot-project-v1';
+    const HISTORY_LIMIT = 100;
+    let undoStack = [];
+    let redoStack = [];
+    let commitTimer = null;
+    let restoringState = false;
+
+    function snapshotState() {
+      return JSON.stringify(Object.assign({ version: 1 }, state, { zoomLevel: 1 }));
+    }
+
+    function setAutosaveStatus(text) {
+      const el = document.getElementById('autosave-status');
+      if (el) el.textContent = text;
+    }
+
+    function persistDraft(snap) {
+      try {
+        localStorage.setItem(STORAGE_KEY, snap);
+        setAutosaveStatus('Draft saved');
+      } catch (e) {
+        setAutosaveStatus('Autosave unavailable');
+      }
+    }
+
+    function restoreDraft() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        loadProjectObject(JSON.parse(raw));
+        return true;
+      } catch (e) {
+        console.warn('Discarding unreadable draft:', e);
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        return false;
+      }
+    }
+
+    function updateHistoryButtons() {
+      const u = document.getElementById('btn-undo');
+      const r = document.getElementById('btn-redo');
+      if (u) u.disabled = undoStack.length < 2;
+      if (r) r.disabled = redoStack.length === 0;
+    }
+
+    function scheduleCommit() {
+      if (restoringState) return;
+      clearTimeout(commitTimer);
+      commitTimer = setTimeout(commitHistory, 400);
+      setAutosaveStatus('Saving...');
+    }
+
+    function commitHistory() {
+      clearTimeout(commitTimer);
+      commitTimer = null;
+      const snap = snapshotState();
+      if (undoStack.length && undoStack[undoStack.length - 1] === snap) {
+        setAutosaveStatus('Draft saved');
+        return;
+      }
+      undoStack.push(snap);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+      redoStack = [];
+      persistDraft(snap);
+      updateHistoryButtons();
+    }
+
+    function restoreSnapshot(snap) {
+      restoringState = true;
+      try {
+        loadProjectObject(JSON.parse(snap));
+      } finally {
+        restoringState = false;
+      }
+      // Re-snapshot so input round-tripping cannot make the top of stack differ (which would wipe redo).
+      undoStack[undoStack.length - 1] = snapshotState();
+      persistDraft(undoStack[undoStack.length - 1]);
+      updateHistoryButtons();
+    }
+
+    function undo() {
+      if (commitTimer) commitHistory();
+      if (undoStack.length < 2) return;
+      redoStack.push(undoStack.pop());
+      restoreSnapshot(undoStack[undoStack.length - 1]);
+    }
+
+    function redo() {
+      if (commitTimer) commitHistory();
+      if (redoStack.length === 0) return;
+      undoStack.push(redoStack.pop());
+      restoreSnapshot(undoStack[undoStack.length - 1]);
+    }
+
+    function resetProjectToDefault() {
+      if (!confirm('Reset the whole project to the default template? You can press Undo to get it back.')) return;
+      if (commitTimer) commitHistory();
+      loadProjectObject(JSON.parse(DEFAULT_STATE_JSON));
+      commitHistory();
+    }
+
+    function onPaintScopeChange() {
+      syncStateFromInputs();
+      updateCalculation();
+    }
+
+    /* Project Totals (all walls) */
+    function getStockSettings() {
+      return {
+        stockLength: parseFloat(document.getElementById('in-stock-board-length').value) || (state.unit === 'mm' ? 2400 : 96),
+        kerf: parseFloat(document.getElementById('in-saw-kerf').value) || (state.unit === 'mm' ? 3 : 0.125)
+      };
+    }
+
+    function renderProjectTotals() {
+      syncStateFromInputs();
+      const { stockLength, kerf } = getStockSettings();
+      const t = computeProjectTotals(state.walls, state.unit, stockLength, kerf, state.unitPrices);
+      const isMm = state.unit === 'mm';
+      const toMeters = isMm ? 1 / 1000 : 1 / 39.3701;
+      const areaLabel = isMm ? t.paintAreaSqM.toFixed(1) + ' m²' : (t.paintAreaSqM * 10.7639).toFixed(1) + ' sq ft';
+
+      document.getElementById('project-totals-subtitle').textContent =
+        `${t.wallCount} wall${t.wallCount === 1 ? '' : 's'} combined`;
+
+      const card = (title, value, detail) => `
+        <div class="material-card">
+          <div class="material-title">${title}</div>
+          <div class="material-value">${value}</div>
+          <div class="material-detail">${detail}</div>
+        </div>`;
+      const saved = t.perWallBoards - t.packed.boards.length;
+      document.getElementById('project-totals-grid').innerHTML =
+        card('Walls', t.wallCount, 'Included in totals') +
+        card('Stock Boards (combined)', t.packed.boards.length,
+          saved > 0 ? `Saves ${saved} vs ${t.perWallBoards} buying wall-by-wall` : `${t.perWallBoards} if bought wall-by-wall`) +
+        card('Total Linear Moulding', formatLength(t.mouldingLinear), `${(t.mouldingLinear * toMeters).toFixed(1)} m`) +
+        card('Wall Paint', isMm ? t.wallPaintL.toFixed(1) + ' L' : t.wallPaintGal.toFixed(1) + ' Gal', `2 coats • ${areaLabel} net of openings`) +
+        card('Trim Paint', isMm ? t.trimPaintL.toFixed(1) + ' L' : t.trimPaintGal.toFixed(1) + ' Gal', '2 coats • all moulding, rail, base') +
+        card('Construction Adhesive', t.adhesive + ' Tubes', 'Sized from combined total') +
+        card('Painter\'s Caulk', t.caulk + ' Tubes', 'Sized from combined total') +
+        card('Wood Filler', t.filler + ' Tub', 'Sized from combined total') +
+        card('Brad Nails', t.nails, `~${Math.ceil(t.nails / 1000)} box`) +
+        card('Estimated Material Cost', '$' + t.cost.toFixed(2), 'Uses unit prices from Cost Estimator');
+
+      renderStockResult(t.packed, stockLength, 'project-stock-summary-stats', 'project-stock-visualizer');
+
+      const tbody = document.getElementById('project-cut-list-tbody');
+      tbody.innerHTML = '';
+      t.rows.forEach(r => {
+        const tr = document.createElement('tr');
+        const badgeClass = r.cutType.includes('45°') ? 'badge-miter' : 'badge-butt';
+        tr.innerHTML = `
+          <td>${escHtml(r.wall)}</td>
+          <td><strong>${escHtml(r.tag)}</strong></td>
+          <td>${escHtml(r.name)}</td>
+          <td>${formatLength(r.length)}</td>
+          <td>${formatLength(r.width)}</td>
+          <td><span class="badge ${badgeClass}">${r.cutType}</span></td>
+          <td>${r.quantity}</td>
+          <td>${formatLength(r.totalLinear)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function csvCell(v) {
+      return '"' + String(v).replace(/"/g, '""') + '"';
+    }
+
+    function exportAllWallsCSV() {
+      syncStateFromInputs();
+      const { stockLength, kerf } = getStockSettings();
+      const t = computeProjectTotals(state.walls, state.unit, stockLength, kerf, state.unitPrices);
+      let csv = `Wall,Piece Tag,Component,Length (${state.unit}),Width (${state.unit}),Joint Cut,Quantity,Total Linear (${state.unit})\n`;
+      t.rows.forEach(r => {
+        csv += [csvCell(r.wall), csvCell(r.tag), csvCell(r.name), r.length, r.width, csvCell(r.cutType), r.quantity, r.totalLinear].join(',') + '\n';
+      });
+      downloadBlob(csv, 'text/csv;charset=utf-8;', 'wainscot-cut-list-all-walls.csv');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    });
 
     /* Theme Management */
     function toggleTheme() {
@@ -3185,12 +3811,32 @@
       renderElevation();
     }
 
+    function updatePrintHeader() {
+      const w = getActiveWall();
+      const summaryEl = document.getElementById('print-wall-summary');
+      const dateEl = document.getElementById('print-date');
+      if (summaryEl) {
+        summaryEl.textContent = `${w.name} • Wall: ${formatLength(w.wallLength)} × ${formatLength(w.wallHeight)} • Wainscot Height: ${formatLength(w.wainscotHeight)} • Style: ${(w.style || '').replace(/_/g, ' ').toUpperCase()}`;
+      }
+      if (dateEl) {
+        dateEl.textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+    }
+    window.addEventListener('beforeprint', updatePrintHeader);
+
     // Initialize application on DOM load
     window.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('wainscot-theme') || 'light';
       applyTheme(savedTheme);
-      syncInputsFromState();
-      updateCalculation();
+      if (!restoreDraft()) {
+        syncInputsFromState();
+        updateCalculation();
+      }
+      clearTimeout(commitTimer);
+      commitTimer = null;
+      undoStack = [snapshotState()];
+      redoStack = [];
+      updateHistoryButtons();
     });
   </script>
 </body>
