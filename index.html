@@ -879,14 +879,14 @@
         <div class="section-body">
           <div class="form-group">
             <label>Wall Name / Label</label>
-            <input type="text" id="in-wall-name" value="Wall 1 (Main)" placeholder="e.g. North Wall / Dining Room" oninput="onWallNameChange(this.value)">
+            <input type="text" id="in-wall-name" value="Feature Wall (2970mm)" placeholder="e.g. North Wall / Dining Room" oninput="onWallNameChange(this.value)">
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Wall Length <span class="label-hint" id="wall-len-unit-lbl">(mm)</span></label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-wall-length" value="3600" min="500" max="25000" step="10" oninput="updateCalculation()">
+                <input type="number" id="in-wall-length" value="2970" min="500" max="25000" step="10" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
@@ -923,14 +923,14 @@
             <div class="form-group">
               <label>Baseboard Height</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-baseboard-height" value="140" min="0" max="400" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-baseboard-height" value="120" min="0" max="400" step="5" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
             <div class="form-group">
               <label>Chair Rail Width</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-chair-rail-height" value="65" min="0" max="200" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-chair-rail-height" value="50" min="0" max="200" step="5" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
@@ -1008,12 +1008,12 @@
           <div class="form-row">
             <div class="form-group" id="group-panel-count">
               <label>Panel / Box Count</label>
-              <input type="number" id="in-panel-count" value="4" min="1" max="30" step="1" oninput="updateCalculation()">
+              <input type="number" id="in-panel-count" value="3" min="1" max="30" step="1" oninput="updateCalculation()">
             </div>
             <div class="form-group" id="group-target-width" style="display: none;">
               <label>Target Box Width</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-target-width" value="600" min="150" max="3000" step="10" oninput="updateCalculation()">
+                <input type="number" id="in-target-width" value="850" min="150" max="3000" step="10" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
@@ -1048,14 +1048,14 @@
             <div class="form-group">
               <label>Bottom Margin (above base)</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-margin-bottom" value="80" min="10" max="400" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-margin-bottom" value="60" min="10" max="400" step="5" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
             <div class="form-group">
               <label>Top Margin (below rail)</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-margin-top" value="80" min="10" max="400" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-margin-top" value="60" min="10" max="400" step="5" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
@@ -1197,9 +1197,9 @@
       <!-- Canvas Toolbar -->
       <div class="canvas-toolbar">
         <div class="toolbar-group">
-          <strong id="canvas-wall-title">Wall 1 (Main) Elevation</strong>
+          <strong id="canvas-wall-title">Feature Wall (2970mm) Elevation</strong>
           <span style="color: var(--text-dim);">|</span>
-          <span id="canvas-summary-text" style="color: var(--text-muted);">4 Panels &bull; Spacing: 100mm &bull; Box Width: 775mm</span>
+          <span id="canvas-summary-text" style="color: var(--text-muted);">3 Panels &bull; Spacing: 100mm &bull; Box Width: 857mm</span>
         </div>
         <div class="toolbar-group">
           <button class="btn btn-sm" onclick="zoomCanvas(1.15)">Zoom In</button>
@@ -1384,12 +1384,12 @@
       walls: [
         {
           id: 'wall-1',
-          name: 'Wall 1 (Main)',
-          wallLength: 3600,
+          name: 'Feature Wall (2970mm)',
+          wallLength: 2970,
           wallHeight: 2400,
           wainscotHeight: 950,
-          baseboardHeight: 140,
-          chairRailHeight: 65,
+          baseboardHeight: 120,
+          chairRailHeight: 50,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1401,24 +1401,42 @@
           gridRows: 2,
           gridRailWidth: 75,
           calcMode: 'auto_count', // 'auto_count', 'target_width', 'fixed_spacing'
-          panelCount: 4,
-          targetWidth: 600,
+          panelCount: 3,
+          targetWidth: 850,
           spacing: 100,
           marginMode: 'equal', // 'equal' or 'custom'
           customMargin: 100,
-          marginBottom: 80,
-          marginTop: 80,
+          marginBottom: 60,
+          marginTop: 60,
           twoTier: false,
           tierRatio: 0.35,
           tierGap: 80,
           obstacles: [
             {
-              id: 'obs-1',
-              name: 'Double Power Outlet',
+              id: 'obs-switch',
+              name: 'Left Light Switch',
               type: 'outlet',
-              x: 950,
-              y: 350,
-              width: 120,
+              x: 120,
+              y: 1240,
+              width: 115,
+              height: 75
+            },
+            {
+              id: 'obs-tv',
+              name: 'Bottom TV Outlet',
+              type: 'outlet',
+              x: 1435,
+              y: 230,
+              width: 115,
+              height: 75
+            },
+            {
+              id: 'obs-gpo',
+              name: 'Bottom GPO',
+              type: 'outlet',
+              x: 1580,
+              y: 230,
+              width: 115,
               height: 75
             }
           ]
@@ -3603,7 +3621,7 @@
     }
 
     /* Autosave + Undo/Redo (snapshot history, debounced) */
-    const STORAGE_KEY = 'wainscot-project-v1';
+    const STORAGE_KEY = 'wainscot-project-v2';
     const HISTORY_LIMIT = 100;
     let undoStack = [];
     let redoStack = [];
