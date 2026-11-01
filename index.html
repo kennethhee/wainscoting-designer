@@ -935,6 +935,26 @@
               </div>
             </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ceiling Coving / Cornice Drop</label>
+              <div class="input-wrapper input-with-unit">
+                <input type="number" id="in-cornice-height" value="90" min="0" max="300" step="5" oninput="updateCalculation()">
+                <span class="input-unit unit-label">mm</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Coving Preset</label>
+              <select id="in-cornice-preset" onchange="applyCornicePreset(this.value)">
+                <option value="90_cove" selected>90mm Standard Cove</option>
+                <option value="75_cove">75mm Cove</option>
+                <option value="55_cove">55mm Small Cove</option>
+                <option value="square_set">Square Set (0mm)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1390,6 +1410,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1449,6 +1470,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1490,6 +1512,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1531,6 +1554,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1562,6 +1586,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1593,6 +1618,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1624,6 +1650,7 @@
           wainscotHeight: 950,
           baseboardHeight: 138,
           chairRailHeight: 50,
+          corniceHeight: 90,
           style: 'picture_frame',
           wallColor: '#f4efe6',
           wallSheen: 'low_sheen',
@@ -1698,6 +1725,7 @@
         w.wainscotHeight = roundUnit(w.wainscotHeight * factor, u);
         w.baseboardHeight = roundUnit(w.baseboardHeight * factor, u);
         w.chairRailHeight = roundUnit(w.chairRailHeight * factor, u);
+        if (w.corniceHeight !== undefined) w.corniceHeight = roundUnit(w.corniceHeight * factor, u);
         w.trimWidth = roundUnit(w.trimWidth * factor, u);
         w.innerGap = roundUnit(w.innerGap * factor, u);
         w.gridRailWidth = roundUnit(w.gridRailWidth * factor, u);
@@ -1774,6 +1802,17 @@
       document.getElementById('in-wainscot-height').value = w.wainscotHeight;
       document.getElementById('in-baseboard-height').value = w.baseboardHeight;
       document.getElementById('in-chair-rail-height').value = w.chairRailHeight;
+      const corniceInput = document.getElementById('in-cornice-height');
+      if (corniceInput) corniceInput.value = w.corniceHeight !== undefined ? w.corniceHeight : 90;
+      const cornicePresetEl = document.getElementById('in-cornice-preset');
+      if (cornicePresetEl) {
+        const ch = w.corniceHeight !== undefined ? w.corniceHeight : 90;
+        if (ch === 90) cornicePresetEl.value = '90_cove';
+        else if (ch === 75) cornicePresetEl.value = '75_cove';
+        else if (ch === 55) cornicePresetEl.value = '55_cove';
+        else if (ch === 0) cornicePresetEl.value = 'square_set';
+        else cornicePresetEl.value = 'custom';
+      }
       document.getElementById('in-wainscot-style').value = w.style;
       const wallColorEl = document.getElementById('in-wall-color');
       if (wallColorEl) wallColorEl.value = w.wallColor || '#f4efe6';
@@ -1817,6 +1856,8 @@
       w.wainscotHeight = parseFloat(document.getElementById('in-wainscot-height').value) || 600;
       w.baseboardHeight = parseFloat(document.getElementById('in-baseboard-height').value) || 0;
       w.chairRailHeight = parseFloat(document.getElementById('in-chair-rail-height').value) || 0;
+      const corniceInput = document.getElementById('in-cornice-height');
+      if (corniceInput) w.corniceHeight = parseFloat(corniceInput.value) || 0;
       w.style = document.getElementById('in-wainscot-style').value;
       const wallColorEl = document.getElementById('in-wall-color');
       if (wallColorEl) w.wallColor = wallColorEl.value;
@@ -1906,6 +1947,23 @@
         w.wainscotHeight = w.wallHeight;
       }
       document.getElementById('in-wainscot-height').value = w.wainscotHeight;
+      updateCalculation();
+    }
+
+    function applyCornicePreset(preset) {
+      const w = getActiveWall();
+      const isMm = state.unit === 'mm';
+      if (preset === '90_cove') {
+        w.corniceHeight = isMm ? 90 : roundUnit(90 * MM_TO_INCH, 'in');
+      } else if (preset === '75_cove') {
+        w.corniceHeight = isMm ? 75 : roundUnit(75 * MM_TO_INCH, 'in');
+      } else if (preset === '55_cove') {
+        w.corniceHeight = isMm ? 55 : roundUnit(55 * MM_TO_INCH, 'in');
+      } else if (preset === 'square_set') {
+        w.corniceHeight = 0;
+      }
+      const el = document.getElementById('in-cornice-height');
+      if (el) el.value = w.corniceHeight;
       updateCalculation();
     }
 
@@ -2027,6 +2085,36 @@
           heightMm: 960,
           verified: false,
           source: 'Generic 75" diagonal 16:9 outer bounds (Note: no Hisense S7NAU 75" model exists)'
+        }
+      },
+      cornice: {
+        '90_cove': {
+          id: '90_cove',
+          name: '90mm Standard Cove Cornice',
+          dropMm: 90,
+          verified: true,
+          source: 'Australian Standard plasterboard cove cornice (CSR Gyprock / Knauf 90mm Cove)'
+        },
+        '75_cove': {
+          id: '75_cove',
+          name: '75mm Cove Cornice',
+          dropMm: 75,
+          verified: true,
+          source: 'CSR Gyprock 75mm Cove'
+        },
+        '55_cove': {
+          id: '55_cove',
+          name: '55mm Small Cove Cornice',
+          dropMm: 55,
+          verified: true,
+          source: 'CSR Gyprock 55mm Cove'
+        },
+        'square_set': {
+          id: 'square_set',
+          name: 'Square Set (No Cornice)',
+          dropMm: 0,
+          verified: true,
+          source: 'Flush 90-degree internal ceiling angle'
         }
       },
       paints: {
@@ -2427,6 +2515,7 @@
 
       const totalLength = w.wallLength;
       const totalHeight = w.wallHeight;
+      const corniceH = Number(w.corniceHeight !== undefined ? w.corniceHeight : 90);
       const wainscotH = Math.min(w.wainscotHeight, totalHeight);
       const baseH = w.baseboardHeight;
       const railH = w.chairRailHeight;
@@ -2583,6 +2672,17 @@
       // Check Obstacle Collisions
       const conflicts = [];
       w.obstacles.forEach(obs => {
+        // Check if obstacle hits ceiling coving / cornice drop
+        if (corniceH > 0) {
+          const obsTop = obs.y + obs.height;
+          if (obsTop > (totalHeight - corniceH)) {
+            conflicts.push({
+              obstacle: obs.name,
+              item: `Ceiling Coving / Cornice Drop (${formatLength(corniceH)})`
+            });
+          }
+        }
+
         // Check if TV hangs down into chair rail
         if (obs.type === 'tv') {
           const obsBottom = obs.y;
@@ -2638,6 +2738,7 @@
         wainscotHeight: wainscotH,
         baseboardHeight: baseH,
         chairRailHeight: railH,
+        corniceHeight: corniceH,
         trimWidth: trimW,
         innerGap: w.innerGap,
         numPanels,
@@ -2723,6 +2824,21 @@
       } else if (w.style === 'recessed_shaker' || w.style === 'raised_panel') {
         markup += `
           <rect x="0" y="${geo.wallHeight - geo.wainscotHeight}" width="${geo.wallLength}" height="${geo.wainscotHeight - geo.baseboardHeight}" fill="${trimColor}" opacity="0.95" />
+        `;
+      }
+
+      // Ceiling Coving / Cornice
+      const corniceH = geo.corniceHeight || 0;
+      if (corniceH > 0) {
+        markup += `
+          <g id="cornice-group">
+            <rect x="0" y="0" width="${geo.wallLength}" height="${corniceH}" fill="${trimColor}" stroke="${trimStroke}" stroke-width="1.5" ${showShading ? 'filter="url(#moulding-shadow)"' : ''} />
+            <line x1="0" y1="${corniceH * 0.82}" x2="${geo.wallLength}" y2="${corniceH * 0.82}" stroke="rgba(0,0,0,0.12)" stroke-width="1.5" />
+            <line x1="0" y1="${corniceH}" x2="${geo.wallLength}" y2="${corniceH}" stroke="rgba(0,0,0,${shadowStrokeOpacity})" stroke-width="2" />
+            ${showShading ? `
+              <line x1="0" y1="${corniceH - 2}" x2="${geo.wallLength}" y2="${corniceH - 2}" stroke="rgba(255,255,255,${highlightOpacity})" stroke-width="1" />
+            ` : ''}
+          </g>
         `;
       }
 
@@ -3116,6 +3232,16 @@
           <text x="${leftDimX + 20}" y="${(geo.wallHeight + baseTopY)/2 + 3}" font-size="10" font-family="${font}" fill="${subTextColor}" text-anchor="end" font-weight="500">
             Base ${formatLength(geo.baseboardHeight)}
           </text>
+          
+          <!-- Ceiling Coving Drop -->
+          ${(geo.corniceHeight || 0) > 0 ? `
+            <line x1="${leftDimX + 30}" y1="0" x2="${leftDimX + 30}" y2="${geo.corniceHeight}" stroke="${color}" stroke-width="1" />
+            <line x1="${leftDimX + 25}" y1="0" x2="${leftDimX + 35}" y2="0" stroke="${color}" stroke-width="1" />
+            <line x1="${leftDimX + 25}" y1="${geo.corniceHeight}" x2="${leftDimX + 35}" y2="${geo.corniceHeight}" stroke="${color}" stroke-width="1" />
+            <text x="${leftDimX + 20}" y="${geo.corniceHeight/2 + 3}" font-size="10" font-family="${font}" fill="${subTextColor}" text-anchor="end" font-weight="500">
+              Cove ${formatLength(geo.corniceHeight)}
+            </text>
+          ` : ''}
         </g>
       `;
 
@@ -3827,7 +3953,7 @@
     }
 
     /* Autosave + Undo/Redo (snapshot history, debounced) */
-    const STORAGE_KEY = 'wainscot-project-v4';
+    const STORAGE_KEY = 'wainscot-project-v5';
     const HISTORY_LIMIT = 100;
     let undoStack = [];
     let redoStack = [];
@@ -4040,7 +4166,7 @@
       const summaryEl = document.getElementById('print-wall-summary');
       const dateEl = document.getElementById('print-date');
       if (summaryEl) {
-        summaryEl.textContent = `${w.name} • Wall: ${formatLength(w.wallLength)} × ${formatLength(w.wallHeight)} • Wainscot Height: ${formatLength(w.wainscotHeight)} • Style: ${(w.style || '').replace(/_/g, ' ').toUpperCase()}`;
+        summaryEl.textContent = `${w.name} • Wall: ${formatLength(w.wallLength)} × ${formatLength(w.wallHeight)} • Coving: ${formatLength(w.corniceHeight !== undefined ? w.corniceHeight : 90)} • Wainscot: ${formatLength(w.wainscotHeight)} • Baseboard: ${formatLength(w.baseboardHeight)} • Style: ${(w.style || '').replace(/_/g, ' ').toUpperCase()}`;
       }
       if (dateEl) {
         dateEl.textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });

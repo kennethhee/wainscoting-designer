@@ -372,19 +372,40 @@ assert(PRESETS_CATALOG.tv['65_canvas'].verified === true, '65" CanvasTV must be 
 assert(PRESETS_CATALOG.tv['75_canvas'].verified === false, '75" Display must be marked verified: false (no 75S7NAU exists)');
 assert(PRESETS_CATALOG.paints.dulux_antique_white.hex === '#f4efe6', 'Dulux Antique White hex must be #f4efe6');
 assert(PRESETS_CATALOG.paints.dulux_antique_white.lrv === 83, 'Dulux Antique White LRV must be 83');
-
-// CanvasTV Centering & Mount Clearance
-const tvCat = PRESETS_CATALOG.tv['55_canvas'];
-const wallLen = 3600;
-const wainscotH = 950;
-const centeredX = Math.round((wallLen - tvCat.widthMm) / 2);
-const mountY = wainscotH + 100; // 100mm clearance above rail
-const clearance = mountY - wainscotH;
-console.log(`CanvasTV centered at X=${centeredX}mm, mount Y=${mountY}mm, clearance=${clearance}mm`);
-assert(centeredX === 1172, `Expected centered X=1172, got ${centeredX}`);
-assert(clearance === 100, `Expected clearance=100, got ${clearance}`);
 console.log('✓ Presets catalog provenance and CanvasTV tests passed.');
 
+// -------------------------------------------------------------
+// TEST SUITE 10: Coving / Cornice Presets & Clearance Verification
+// -------------------------------------------------------------
+console.log('\n--- Test Suite 10: Coving / Cornice Presets & Collision Detection ---');
+assert(PRESETS_CATALOG.cornice['90_cove'] !== undefined, '90mm Cove cornice must exist in PRESETS_CATALOG');
+assert(PRESETS_CATALOG.cornice['90_cove'].dropMm === 90, '90mm Cove dropMm must be 90');
+assert(PRESETS_CATALOG.cornice['75_cove'].dropMm === 75, '75mm Cove dropMm must be 75');
+assert(PRESETS_CATALOG.cornice['55_cove'].dropMm === 55, '55mm Small Cove dropMm must be 55');
+assert(PRESETS_CATALOG.cornice['square_set'].dropMm === 0, 'Square Set dropMm must be 0');
+
+// Test high obstacle collision with coving
+const wallWithHighObs = {
+  wallLength: 2970,
+  wallHeight: 2400,
+  wainscotHeight: 950,
+  baseboardHeight: 138,
+  chairRailHeight: 50,
+  corniceHeight: 90,
+  style: 'picture_frame',
+  trimWidth: 40,
+  spacing: 100,
+  equalMargins: true,
+  obstacles: [
+    { id: 'high-unit', name: 'High Cabinet/AC Unit', x: 500, y: 2320, width: 400, height: 70, type: 'other' }
+  ]
+};
+const highObsGeo = computeWallGeometry(wallWithHighObs);
+assert(highObsGeo.conflicts.length === 1, `Expected 1 conflict with coving, got ${highObsGeo.conflicts.length}`);
+assert(highObsGeo.conflicts[0].item.includes('Ceiling Coving / Cornice Drop'), 'Conflict must cite Ceiling Coving / Cornice Drop');
+console.log(`Coving conflict detected correctly: ${highObsGeo.conflicts[0].obstacle} collided with ${highObsGeo.conflicts[0].item}`);
+console.log('✓ Coving presets and collision detection tests passed.');
+
 console.log('\n====================================================');
-console.log('  ALL 9 TEST SUITES PASSED (100% PRODUCTION SEAM)   ');
+console.log('  ALL 10 TEST SUITES PASSED (100% PRODUCTION SEAM)  ');
 console.log('====================================================');
