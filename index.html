@@ -923,7 +923,7 @@
             <div class="form-group">
               <label>Baseboard Height</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-baseboard-height" value="120" min="0" max="400" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-baseboard-height" value="138" min="0" max="400" step="1" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
@@ -1048,14 +1048,14 @@
             <div class="form-group">
               <label>Bottom Margin (above base)</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-margin-bottom" value="60" min="10" max="400" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-margin-bottom" value="40" min="10" max="400" step="5" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
             <div class="form-group">
               <label>Top Margin (below rail)</label>
               <div class="input-wrapper input-with-unit">
-                <input type="number" id="in-margin-top" value="60" min="10" max="400" step="5" oninput="updateCalculation()">
+                <input type="number" id="in-margin-top" value="40" min="10" max="400" step="5" oninput="updateCalculation()">
                 <span class="input-unit unit-label">mm</span>
               </div>
             </div>
@@ -1388,7 +1388,7 @@
           wallLength: 2970,
           wallHeight: 2400,
           wainscotHeight: 950,
-          baseboardHeight: 120,
+          baseboardHeight: 138,
           chairRailHeight: 50,
           style: 'picture_frame',
           wallColor: '#f4efe6',
@@ -1406,8 +1406,8 @@
           spacing: 100,
           marginMode: 'equal', // 'equal' or 'custom'
           customMargin: 100,
-          marginBottom: 60,
-          marginTop: 60,
+          marginBottom: 40,
+          marginTop: 40,
           twoTier: false,
           tierRatio: 0.35,
           tierGap: 80,
@@ -3621,7 +3621,7 @@
     }
 
     /* Autosave + Undo/Redo (snapshot history, debounced) */
-    const STORAGE_KEY = 'wainscot-project-v2';
+    const STORAGE_KEY = 'wainscot-project-v3';
     const HISTORY_LIMIT = 100;
     let undoStack = [];
     let redoStack = [];
