@@ -13,7 +13,7 @@ export type CalcMode = 'auto_count' | 'target_width' | 'fixed_spacing';
 export type MarginMode = 'equal' | 'custom';
 export type PaintScope = 'auto' | 'full_wall' | 'wainscot_only';
 export type Sheen = 'matte' | 'low_sheen' | 'satin' | 'semi_gloss' | 'gloss';
-export type ObstacleType = 'outlet' | 'door' | 'window' | 'tv' | 'other';
+export type ObstacleType = 'outlet' | 'door' | 'window' | 'tv' | 'furniture' | 'other';
 
 export type CutProfile =
   | 'outer_moulding'

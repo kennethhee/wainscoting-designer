@@ -253,8 +253,8 @@ export function computeWallGeometry(w: Wall): WallGeometry {
       }
     }
 
-    // Doors and windows already split segments; skip moulding perimeter clashes for doors/windows
-    if (obs.type === 'door' || obs.type === 'window') continue;
+    // Doors, windows, and freestanding furniture do not trigger wall-moulding perimeter clashes
+    if (obs.type === 'door' || obs.type === 'window' || obs.type === 'furniture') continue;
 
     // 2. Chair rail collision (TVs, switches, outlets)
     if (railH > 0) {

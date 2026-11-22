@@ -270,6 +270,47 @@ function renderObstacleSvg(obs: Obstacle, geo: WallGeometry, unit: Unit, isSelec
     `;
   }
 
+  if (obs.type === 'furniture') {
+    // Architectural mid-century lowline TV unit elevation (e.g. Castlery Seb: 240mm legs, side doors + open centre shelf)
+    const legH = Math.min(obs.height * 0.42, /seb/i.test(obs.name) ? 240 : Math.round(obs.height * 0.34));
+    const bodyH = Math.max(80, obs.height - legH);
+    const bodyY = svgY;
+    const legTopY = bodyY + bodyH;
+    const legBotY = svgY + obs.height;
+    const doorW = obs.width * 0.32;
+    const centerX = obs.x + doorW;
+    const centerW = obs.width - doorW * 2;
+    const woodFill = '#b68d5c';
+    const woodDark = '#8d6639';
+    const woodShelfBg = '#6d4d2a';
+    const strokeCol = strokeSel ?? '#5c3e1e';
+
+    return `
+      <g class="svg-obstacle" data-obs-id="${escHtml(obs.id)}" data-tooltip="${escHtml(tip)}" opacity="0.88">
+        <!-- Tapered mid-century timber legs -->
+        <polygon points="${obs.x + 85},${legTopY} ${obs.x + 130},${legTopY} ${obs.x + 95},${legBotY} ${obs.x + 65},${legBotY}" fill="${woodDark}" stroke="${strokeCol}" stroke-width="2.5" />
+        <polygon points="${obs.x + obs.width - 130},${legTopY} ${obs.x + obs.width - 85},${legTopY} ${obs.x + obs.width - 65},${legBotY} ${obs.x + obs.width - 95},${legBotY}" fill="${woodDark}" stroke="${strokeCol}" stroke-width="2.5" />
+        <!-- Under-frame rail -->
+        <rect x="${obs.x + 85}" y="${legTopY}" width="${obs.width - 170}" height="24" fill="${woodDark}" />
+        <!-- Main carcass -->
+        <rect x="${obs.x}" y="${bodyY}" width="${obs.width}" height="${bodyH}" rx="14" fill="${woodFill}" stroke="${strokeCol}" stroke-width="${isSelected ? selStrokeW : 4}" />
+        <!-- Left & right cabinet doors -->
+        <rect x="${obs.x + 18}" y="${bodyY + 18}" width="${doorW - 24}" height="${bodyH - 36}" rx="4" fill="#c39a69" stroke="${woodDark}" stroke-width="2" />
+        <rect x="${obs.x + obs.width - doorW + 6}" y="${bodyY + 18}" width="${doorW - 24}" height="${bodyH - 36}" rx="4" fill="#c39a69" stroke="${woodDark}" stroke-width="2" />
+        <!-- Slim dark handles -->
+        <rect x="${obs.x + doorW - 95}" y="${bodyY + 42}" width="65" height="10" rx="4" fill="#1e293b" />
+        <rect x="${obs.x + obs.width - doorW + 30}" y="${bodyY + 42}" width="65" height="10" rx="4" fill="#1e293b" />
+        <!-- Open centre media bay + shelf + dual cable grommets -->
+        <rect x="${centerX}" y="${bodyY + 18}" width="${centerW}" height="${bodyH - 36}" fill="${woodShelfBg}" stroke="${woodDark}" stroke-width="2" />
+        <line x1="${centerX}" y1="${bodyY + bodyH / 2}" x2="${centerX + centerW}" y2="${bodyY + bodyH / 2}" stroke="${woodFill}" stroke-width="14" />
+        <circle cx="${centerX + centerW / 2}" cy="${bodyY + bodyH * 0.3}" r="22" fill="#f8fafc" fill-opacity="0.7" />
+        <circle cx="${centerX + centerW / 2}" cy="${bodyY + bodyH * 0.72}" r="22" fill="#f8fafc" fill-opacity="0.7" />
+        <!-- Label -->
+        <text x="${obs.x + obs.width / 2}" y="${bodyY - 16}" font-size="${Math.round(u * 0.56)}" font-family="Inter, sans-serif" fill="#78350f" text-anchor="middle" font-weight="600">${escHtml(obs.name)}</text>
+      </g>
+    `;
+  }
+
   if (/brush/i.test(obs.name)) {
     const slotX = obs.x + obs.width * 0.2;
     const slotY = svgY + obs.height * 0.3;
@@ -504,7 +545,8 @@ export function renderElevation(container: HTMLElement, snap: ComputedSnapshot):
 
   // Render large openings & TVs first so recessed plates/brush plates behind TV remain visible & draggable
   const sortedObstacles = [...w.obstacles].sort((a, b) => {
-    const rank = (t: Obstacle['type']) => (t === 'door' || t === 'window' ? 0 : t === 'tv' ? 1 : 2);
+    const rank = (t: Obstacle['type']) =>
+      t === 'door' || t === 'window' ? 0 : t === 'tv' ? 1 : t === 'furniture' ? 2 : 3;
     return rank(a.type) - rank(b.type);
   });
 

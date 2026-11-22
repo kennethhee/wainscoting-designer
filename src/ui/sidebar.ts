@@ -2,6 +2,7 @@ import {
   CORNICE_PRESETS,
   PAINT_PRESETS,
   TV_PRESETS,
+  TV_UNIT_PRESETS,
   displayToMm,
   escHtml,
   isBoardAndBattenStyle,
@@ -315,6 +316,7 @@ export function initSidebar(sidebarEl: HTMLElement): void {
         <button class="btn btn-sm" id="btn-add-door" type="button">+ Door</button>
         <button class="btn btn-sm" id="btn-add-window" type="button">+ Window</button>
         <button class="btn btn-sm" id="btn-add-tv" type="button">+ CanvasTV</button>
+        <button class="btn btn-sm" id="btn-add-tv-unit" type="button">+ TV Unit</button>
       </div>
       <div id="obstacles-list" style="display:flex; flex-direction:column; gap:8px;"></div>
     </section>
@@ -452,6 +454,18 @@ export function initSidebar(sidebarEl: HTMLElement): void {
       height: tv.heightMm
     });
   });
+  sidebarEl.querySelector('#btn-add-tv-unit')?.addEventListener('click', () => {
+    const w = store.getSnapshot().activeWall;
+    const preset = TV_UNIT_PRESETS.castlery_seb_150!;
+    store.addObstacle({
+      name: preset.name,
+      type: 'furniture',
+      x: Math.max(0, Math.round((w.wallLength - preset.widthMm) / 2)),
+      y: 0,
+      width: preset.widthMm,
+      height: preset.heightMm
+    });
+  });
 }
 
 export function renderSidebar(sidebarEl: HTMLElement, snap: ComputedSnapshot): void {
@@ -570,6 +584,7 @@ export function renderSidebar(sidebarEl: HTMLElement, snap: ComputedSnapshot): v
             <option value="door" ${o.type === 'door' ? 'selected' : ''}>Door</option>
             <option value="window" ${o.type === 'window' ? 'selected' : ''}>Window</option>
             <option value="tv" ${o.type === 'tv' ? 'selected' : ''}>TV</option>
+            <option value="furniture" ${o.type === 'furniture' ? 'selected' : ''}>TV Unit</option>
             <option value="other" ${o.type === 'other' ? 'selected' : ''}>Other</option>
           </select>
           <button class="btn btn-sm btn-danger" data-obs-remove="${escHtml(o.id)}" type="button" title="Remove">&times;</button>
@@ -617,6 +632,18 @@ export function renderSidebar(sidebarEl: HTMLElement, snap: ComputedSnapshot): v
               <option value="55_canvas">55" CanvasTV</option>
               <option value="65_canvas">65" CanvasTV</option>
               <option value="75_canvas">75" Generic</option>
+            </select>`
+              : ''
+          }
+          ${
+            o.type === 'furniture'
+              ? `
+            <select data-unit-preset="${escHtml(o.id)}" style="width:148px; padding:3px 6px; font-size:11px;">
+              <option value="">Swap TV Unit...</option>
+              <option value="castlery_seb_150">Castlery Seb (1.5m)</option>
+              <option value="loungelovers_ollie_160">Lounge Lovers Ollie (1.6m)</option>
+              <option value="rjliving_muse_180">RJ Living Muse (1.8m)</option>
+              <option value="freedom_casier_180">Freedom Casier (1.8m)</option>
             </select>`
               : ''
           }
@@ -677,6 +704,22 @@ export function renderSidebar(sidebarEl: HTMLElement, snap: ComputedSnapshot): v
       const tv = TV_PRESETS[sel.value];
       if (tv) {
         store.updateObstacle(id, { name: tv.name, width: tv.widthMm, height: tv.heightMm });
+      }
+      sel.value = '';
+    });
+
+    card.querySelector<HTMLSelectElement>('[data-unit-preset]')?.addEventListener('change', (e) => {
+      const sel = e.target as HTMLSelectElement;
+      const preset = TV_UNIT_PRESETS[sel.value];
+      if (preset) {
+        const centeredX = Math.max(0, Math.round((w.wallLength - preset.widthMm) / 2));
+        store.updateObstacle(id, {
+          name: preset.name,
+          x: centeredX,
+          y: 0,
+          width: preset.widthMm,
+          height: preset.heightMm
+        });
       }
       sel.value = '';
     });

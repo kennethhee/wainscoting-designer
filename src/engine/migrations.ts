@@ -7,7 +7,7 @@ import {
 import type { Obstacle, ObstacleType, Project, TrimSpec, Unit, UnitPrices, Wall } from './types';
 import { MM_PER_INCH } from './units';
 
-const VALID_OBSTACLE_TYPES: ObstacleType[] = ['outlet', 'door', 'window', 'tv', 'other'];
+const VALID_OBSTACLE_TYPES: ObstacleType[] = ['outlet', 'door', 'window', 'tv', 'furniture', 'other'];
 
 function toNum(v: unknown, fallback: number): number {
   const n = Number(v);

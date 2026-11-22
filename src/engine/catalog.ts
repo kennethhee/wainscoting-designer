@@ -57,6 +57,55 @@ export const CORNICE_PRESETS: Record<string, CornicePreset> = {
   }
 };
 
+export interface TvUnitPreset {
+  id: string;
+  name: string;
+  widthMm: number;
+  heightMm: number;
+  depthMm: number;
+  legHeightMm: number;
+  source: string;
+}
+
+export const TV_UNIT_PRESETS: Record<string, TvUnitPreset> = {
+  castlery_seb_150: {
+    id: 'castlery_seb_150',
+    name: 'Castlery Seb TV Unit (1.5m)',
+    widthMm: 1500,
+    heightMm: 600,
+    depthMm: 450,
+    legHeightMm: 240,
+    source: 'Castlery AU Seb TV Unit 1.5m (150 x 45 x 60 cm, 24 cm legs)'
+  },
+  loungelovers_ollie_160: {
+    id: 'loungelovers_ollie_160',
+    name: 'Lounge Lovers Ollie (1.6m)',
+    widthMm: 1600,
+    heightMm: 550,
+    depthMm: 420,
+    legHeightMm: 180,
+    source: 'Lounge Lovers AU Ollie 160cm Oak TV Unit'
+  },
+  rjliving_muse_180: {
+    id: 'rjliving_muse_180',
+    name: 'RJ Living Muse (1.8m)',
+    widthMm: 1800,
+    heightMm: 520,
+    depthMm: 420,
+    legHeightMm: 180,
+    source: 'RJ Living AU Muse 180cm Light Oak Entertainment Unit'
+  },
+  freedom_casier_180: {
+    id: 'freedom_casier_180',
+    name: 'Freedom Casier (1.8m)',
+    widthMm: 1800,
+    heightMm: 500,
+    depthMm: 400,
+    legHeightMm: 160,
+    source: 'Freedom AU Casier 180cm Oak Entertainment Unit (180 x 40 cm)'
+  }
+};
+
 export const TV_PRESETS: Record<string, TvPreset> = {
   '55_canvas': {
     id: '55_canvas',
@@ -255,10 +304,11 @@ export function createWall(overrides: Partial<Wall> & { id: string; name: string
   };
 }
 
-/** Default project: Feature Wall (2970mm) with 55" Hisense CanvasTV & measured outlets */
+/** Default project: Feature Wall (2970mm) with 55" Hisense CanvasTV, Castlery Seb TV Unit & measured outlets */
 export function createStarterProject(): Project {
   const trim = { ...DEFAULT_TRIM_SPEC };
   const tv = TV_PRESETS['55_canvas']!;
+  const seb = TV_UNIT_PRESETS.castlery_seb_150!;
   return {
     version: 2,
     unit: 'mm',
@@ -284,6 +334,15 @@ export function createStarterProject(): Project {
               y: 1050, // 100 mm above 950 mm chair rail
               width: tv.widthMm,
               height: tv.heightMm
+            },
+            {
+              id: 'obs-tv-unit',
+              name: seb.name,
+              type: 'furniture',
+              x: Math.round((2970 - seb.widthMm) / 2), // 735 mm centered
+              y: 0, // Freestanding on floor
+              width: seb.widthMm,
+              height: seb.heightMm
             },
             {
               id: 'obs-brush-tv',
