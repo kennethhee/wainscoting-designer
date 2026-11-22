@@ -1,52 +1,43 @@
-# Wainscot Studio - Architectural Designer & Calculator
+# Wainscot Studio — Architectural Designer & Carpentry Calculator
 
-An interactive, zero-dependency carpentry CAD and layout tool for designing wainscoting installations, calculating exact box and batten spacings, generating 45°/90° cut lists, running 1D bin-packing lumber stock optimization, and estimating hardware, paint, and material costs.
+An interactive carpentry CAD and layout studio for designing wainscoting installations, calculating opening-aware box and batten layouts, generating profile-grouped 45°/90° cut lists, running 1D cutting-stock bin packing, and estimating hardware, paint, and itemized material costs.
 
 ## Live Application
 
-- Web App: https://kennethhee.github.io/wainscoting-designer/
-- Project Source: https://github.com/kennethhee/wainscoting-designer
+- **Web App:** https://kennethhee.github.io/wainscoting-designer/
+- **Repository:** https://github.com/kennethhee/wainscoting-designer
 
-## Features
+## Key Capabilities (v2)
 
-### 1. Wainscoting Styles
-- **Picture Frame (Box Moulding)**: Traditional single frames on drywall with 45° miter corners.
-- **Double Picture Frame (Nested)**: Nested inner shadow box with configurable offset gap.
-- **Board and Batten**: Vertical stiles with top and bottom rails, full or partial height.
-- **Grid Board and Batten**: Multi-tier grid squares with horizontal cross rails.
-- **Recessed Shaker Panel & Raised Panel**: Classic craftsman panels with infill sheet calculation.
-- **Cottage Beadboard**: Vertical grooved wainscot below dado cap.
-- **Two-Tier Layouts**: Upper tall box and lower square box divided by intermediate gap/rail.
+- **Canonical Millimetre Engine (`src/engine/`):** All geometry and persistence are stored in canonical `mm`; imperial (`in` with `1/16"` fractions) is strictly a display/input layer with zero toggle drift.
+- **Opening-Aware Wall Segmentation:** Doors and low windows (with configurable architrave clearance) automatically split wall spans so panels, skirting, and chair rail stop cleanly at openings.
+- **True-Scale Interactive SVG Elevation:** Picture-frame strokes are inset by `trimWidth / 2` so rendered outer edges, gaps, and margins match exact long-point miter dimensions. Obstacles (outlets, doors, windows, TVs) can be dragged directly on the elevation with 5 mm snap-to-grid.
+- **Ceiling Coving & Multi-Conflict Detection:** Models standard Australian cornice drops (90/75/55 mm Cove, Square Set, Custom) and surfaces all simultaneous clashes (coving, chair rail, baseboard, moulding perimeters, battens) with suggestions.
+- **Project-Wide Trim Continuity:** Keep multi-room projects locked to shared trim heights, profiles, and colours, or override individual walls.
+- **Profile-Grouped 1D Stock Optimizer:** Separately bin-packs outer moulding, inner nested moulding, battens, chair rail, and skirting with independent stock lengths and saw kerf, flagging oversize runs that need scarf joints.
+- **1:1 Itemized Cost & Net Paint Area:** Deducts coving, baseboard, and openings from painted wall area; every cost row sums directly to the displayed total.
 
-### 2. Spacing & Layout Engine
-- **Equal Stile / Gap Calculation**: Automatically computes exact box widths so all margins and internal gaps are identical.
-- **Fixed Stile / Target Panel Width**: Computes optimal panel count and spacing based on desired box dimensions.
-- **Obstacle Collision Detection**: Real-time conflict checks against electrical outlets, light switches, doors, and windows, alerting when a box moulding or batten would fall across a fixture.
-- **Unit Toggle**: Dual Metric (`mm`) and Imperial (`in` with 1/16" fractional formatting).
+## Development & Build
 
-### 3. Carpentry Outputs
-- **Elevation Visualizer**: Scaled 2D SVG canvas with true dimensions, shadows, and architectural measurement annotations.
-- **Cut List Schedule**: Categorized piece tags, lengths, widths, joint types (45° miter vs 90° butt), quantities, and linear measurements.
-- **1D Cutting Stock Optimizer**: Best-fit decreasing bin-packing algorithm allocating cut pieces across standard stock board lengths (2.4m / 8ft, 3.0m / 10ft, 3.6m / 12ft, 4.8m / 16ft) with saw kerf allowance and waste percentage visualization.
-- **Hardware & Materials Estimator**: 18-gauge brad nails count, construction adhesive tubes, painter's caulk, wood filler, primer/paint coverage (square area), and total customizable budget table.
-- **Exports**: Print-ready architectural plan (`Ctrl/Cmd+P`), CSV cut list export, and JSON project save/load.
-
-## Quick Start
-
-### Option A: Open directly in your browser
-Double-click `/Users/khee/Claude/wainscoting-designer.html` or run:
 ```bash
-open /Users/khee/Claude/wainscoting-designer.html
+npm install
+npm run dev          # Local Vite dev server
+npm test             # Run Vitest unit suite
+npm run typecheck    # Strict TypeScript check
+npm run build        # Production build (dist/) for GitHub Pages
+npm run build:single # Portable single-file HTML (dist-single/index.html)
 ```
 
-### Option B: Local Web Server
-```bash
-cd /Users/khee/.gemini/antigravity/scratch/wainscoting-designer
-npx serve .
-```
+## Architecture
 
-### Run Calculation Verification Tests
-```bash
-cd /Users/khee/.gemini/antigravity/scratch/wainscoting-designer
-node test_calculator.js
+```text
+src/
+├── engine/      # Pure deterministic TypeScript engine (zero DOM dependencies)
+│   ├── types.ts, units.ts, catalog.ts, segments.ts,
+│   ├── geometry.ts, cutlist.ts, optimizer.ts, materials.ts, migrations.ts
+├── state/       # Reactive store, undo/redo, debounced localStorage + v1->v2 migration
+├── ui/          # Header, Sidebar, Interactive SVG Elevation, Output Drawer
+└── styles/      # Light/Dark architectural theme + print stylesheet
+tests/
+└── engine.test.ts
 ```
