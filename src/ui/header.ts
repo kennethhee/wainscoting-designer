@@ -33,9 +33,8 @@ export function initHeader(headerEl: HTMLElement): void {
 
       <select id="preset-select" style="width: 210px;" aria-label="Load preset">
         <option value="">Load Preset / Project...</option>
-        <optgroup label="Full Projects">
-          <option value="project:stanhope_gardens">Stanhope Gardens (7 Walls — Option A)</option>
-          <option value="project:starter">Clean Starter Wall</option>
+        <optgroup label="Project">
+          <option value="project:starter">Reset to Feature Wall + 55&quot; TV</option>
         </optgroup>
         <optgroup label="Architectural Styles (Active Wall)">
           ${styleOptions}

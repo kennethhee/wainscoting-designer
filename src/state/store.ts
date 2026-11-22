@@ -52,8 +52,7 @@ export interface ComputedSnapshot {
 
 type Listener = (snap: ComputedSnapshot) => void;
 
-const STORAGE_KEY_V2 = 'wainscot-studio-v2';
-const LEGACY_KEYS = ['wainscot-project-v5', 'wainscot-project-v4', 'wainscot-project-v3'];
+const STORAGE_KEY_V2 = 'wainscot-studio-v2-feature';
 const THEME_KEY = 'wainscot-theme';
 const HISTORY_LIMIT = 100;
 
@@ -135,21 +134,6 @@ class AppStore {
         return normalizeProject(JSON.parse(rawV2));
       } catch {
         // Fall through to legacy or starter
-      }
-    }
-
-    // Attempt seamless migration from legacy v1-v5 drafts
-    for (const key of LEGACY_KEYS) {
-      const rawLegacy = this.safeGetStorage(key);
-      if (rawLegacy) {
-        try {
-          const migrated = normalizeProject(JSON.parse(rawLegacy));
-          this.safeSetStorage(STORAGE_KEY_V2, JSON.stringify(migrated));
-          this.ui.autosaveStatus = 'Migrated previous draft';
-          return migrated;
-        } catch {
-          // Try next key
-        }
       }
     }
 

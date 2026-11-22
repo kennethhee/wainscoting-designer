@@ -12,7 +12,6 @@ import {
   computePaintArea,
   computeProjectTotals,
   computeWallGeometry,
-  createStanhopeGardensProject,
   createStarterProject,
   createWall,
   displayToMm,
@@ -241,16 +240,22 @@ describe('Paint Area & 1:1 Itemized Cost Integrity', () => {
     expect(sum).toBeCloseTo(est.totalCost, 6);
   });
 
-  it('aggregates whole-project totals for the 7-wall Stanhope Gardens preset cleanly', () => {
-    const stanhope = createStanhopeGardensProject();
-    expect(stanhope.walls).toHaveLength(7);
+  it('defaults to the single Feature Wall with 55" CanvasTV and 0 conflicts, and aggregates multi-wall totals cleanly', () => {
+    const starter = createStarterProject();
+    expect(starter.walls).toHaveLength(1);
+    expect(starter.walls[0]?.obstacles.some((o) => o.type === 'tv')).toBe(true);
 
-    // Wall 1 (Entry/Staircase) should have 0 conflicts with the 3 measured outlets
-    const wall1Geo = computeWallGeometry(stanhope.walls[0]!);
+    // Feature wall should have 0 conflicts with TV + 3 measured outlets
+    const wall1Geo = computeWallGeometry(starter.walls[0]!);
     expect(wall1Geo.conflicts).toHaveLength(0);
 
-    const totals = computeProjectTotals(stanhope.walls, 'mm', stanhope.stockSettings, stanhope.unitPrices);
-    expect(totals.wallCount).toBe(7);
+    // Verify multi-wall cross-wall stock packing aggregation
+    const twoWalls = [
+      starter.walls[0]!,
+      createWall({ id: 'wall-2', name: 'Second Wall', wallLength: 3200, panelCount: 4 })
+    ];
+    const totals = computeProjectTotals(twoWalls, 'mm', starter.stockSettings, starter.unitPrices);
+    expect(totals.wallCount).toBe(2);
     expect(totals.totalBoards).toBeLessThanOrEqual(totals.perWallBoards);
     expect(totals.materials.totalCost).toBeGreaterThan(0);
   });

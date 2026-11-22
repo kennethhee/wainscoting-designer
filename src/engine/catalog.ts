@@ -255,9 +255,10 @@ export function createWall(overrides: Partial<Wall> & { id: string; name: string
   };
 }
 
-/** Clean generic starter project (default on fresh load) */
+/** Default project: Feature Wall (2970mm) with 55" Hisense CanvasTV & measured outlets */
 export function createStarterProject(): Project {
   const trim = { ...DEFAULT_TRIM_SPEC };
+  const tv = TV_PRESETS['55_canvas']!;
   return {
     version: 2,
     unit: 'mm',
@@ -269,21 +270,24 @@ export function createStarterProject(): Project {
       createWall(
         {
           id: 'wall-1',
-          name: 'Living Room Feature Wall',
-          wallLength: 3600,
+          name: 'Feature Wall (2970mm)',
+          wallLength: 2970,
           wallHeight: 2400,
-          panelCount: 4,
-          targetWidth: 775,
+          panelCount: 3,
+          targetWidth: 857,
           obstacles: [
             {
-              id: 'obs-gpo-1',
-              name: 'Power Outlet',
-              type: 'outlet',
-              x: 420,
-              y: 230,
-              width: 115,
-              height: 75
-            }
+              id: 'obs-canvas-tv',
+              name: tv.name,
+              type: 'tv',
+              x: Math.round((2970 - tv.widthMm) / 2), // 857 mm centered
+              y: 1050, // 100 mm above 950 mm chair rail
+              width: tv.widthMm,
+              height: tv.heightMm
+            },
+            { id: 'obs-switch', name: 'Left Light Switch', type: 'outlet', x: 120, y: 1240, width: 115, height: 75 },
+            { id: 'obs-tv', name: 'Bottom TV Outlet', type: 'outlet', x: 1435, y: 230, width: 115, height: 75 },
+            { id: 'obs-gpo', name: 'Bottom GPO', type: 'outlet', x: 1580, y: 230, width: 115, height: 75 }
           ]
         },
         trim
@@ -292,106 +296,7 @@ export function createStarterProject(): Project {
   };
 }
 
-/** Stanhope Gardens Ground Floor — 7-Wall Option A Preset */
+/** Alias kept for backwards compatibility — returns the single Feature Wall with TV */
 export function createStanhopeGardensProject(): Project {
-  const trim: TrimSpec = { ...DEFAULT_TRIM_SPEC };
-  return {
-    version: 2,
-    unit: 'mm',
-    currentWallIndex: 0,
-    trimDefaults: trim,
-    stockSettings: { ...DEFAULT_STOCK_SETTINGS },
-    unitPrices: { ...DEFAULT_UNIT_PRICES },
-    walls: [
-      createWall(
-        {
-          id: 'wall-1',
-          name: 'Zone 1: Entry / Staircase Feature Wall',
-          wallLength: 2970,
-          wallHeight: 2400,
-          panelCount: 3,
-          targetWidth: 850,
-          obstacles: [
-            { id: 'obs-switch', name: 'Left Light Switch', type: 'outlet', x: 120, y: 1240, width: 115, height: 75 },
-            { id: 'obs-tv', name: 'Bottom TV Outlet', type: 'outlet', x: 1435, y: 230, width: 115, height: 75 },
-            { id: 'obs-gpo', name: 'Bottom GPO', type: 'outlet', x: 1580, y: 230, width: 115, height: 75 }
-          ]
-        },
-        trim
-      ),
-      createWall(
-        {
-          id: 'wall-2',
-          name: 'Zone 2: Formal Living Front Wall',
-          wallLength: 3800,
-          wallHeight: 2400,
-          panelCount: 4,
-          targetWidth: 825,
-          obstacles: [
-            { id: 'front-win', name: 'Front Window Opening', type: 'window', x: 1000, y: 1050, width: 1800, height: 1200, architraveMm: 65 }
-          ]
-        },
-        trim
-      ),
-      createWall(
-        {
-          id: 'wall-3',
-          name: 'Zone 2: Living & Dining Left Patio Wall',
-          wallLength: 6000,
-          wallHeight: 2400,
-          calcMode: 'target_width',
-          panelCount: 4,
-          targetWidth: 740,
-          obstacles: [
-            { id: 'patio-door', name: 'Patio Sliding Door', type: 'door', x: 2100, y: 0, width: 2100, height: 2100, architraveMm: 70 }
-          ]
-        },
-        trim
-      ),
-      createWall(
-        {
-          id: 'wall-4',
-          name: 'Zone 2: Dining Rear Return Wall',
-          wallLength: 2400,
-          wallHeight: 2400,
-          panelCount: 3,
-          targetWidth: 670
-        },
-        trim
-      ),
-      createWall(
-        {
-          id: 'wall-5',
-          name: 'Zone 3: Central Hallway Spine',
-          wallLength: 3200,
-          wallHeight: 2400,
-          panelCount: 4,
-          targetWidth: 675
-        },
-        trim
-      ),
-      createWall(
-        {
-          id: 'wall-6',
-          name: 'Zone 4: Rear Family Main Feature Wall',
-          wallLength: 5000,
-          wallHeight: 2400,
-          panelCount: 6,
-          targetWidth: 715
-        },
-        trim
-      ),
-      createWall(
-        {
-          id: 'wall-7',
-          name: 'Zone 4: Rear Family Side Wall',
-          wallLength: 3500,
-          wallHeight: 2400,
-          panelCount: 4,
-          targetWidth: 750
-        },
-        trim
-      )
-    ]
-  };
+  return createStarterProject();
 }
