@@ -27,9 +27,12 @@ export type Theme = 'light' | 'dark';
 
 export interface UIState {
   zoomLevel: number;
+  panX: number;
+  panY: number;
   showDims: boolean;
   showShading: boolean;
   activeDrawerTab: DrawerTab;
+  drawerCollapsed: boolean;
   selectedObstacleId: string | null;
   theme: Theme;
   autosaveStatus: string;
@@ -93,9 +96,12 @@ class AppStore {
     const savedTheme = this.safeGetStorage(THEME_KEY);
     this.ui = {
       zoomLevel: 1.0,
+      panX: 0,
+      panY: 0,
       showDims: true,
       showShading: true,
       activeDrawerTab: 'cutlist',
+      drawerCollapsed: false,
       selectedObstacleId: null,
       theme: savedTheme === 'dark' ? 'dark' : 'light',
       autosaveStatus: 'Ready',
@@ -247,12 +253,32 @@ class AppStore {
   }
 
   public setDrawerTab(tab: DrawerTab): void {
-    this.ui = { ...this.ui, activeDrawerTab: tab };
+    this.ui = { ...this.ui, activeDrawerTab: tab, drawerCollapsed: false };
+    this.emit(false);
+  }
+
+  public toggleDrawer(): void {
+    this.ui = { ...this.ui, drawerCollapsed: !this.ui.drawerCollapsed };
     this.emit(false);
   }
 
   public setZoom(zoomLevel: number): void {
-    this.ui = { ...this.ui, zoomLevel: Math.max(0.4, Math.min(3.0, zoomLevel)) };
+    this.ui = { ...this.ui, zoomLevel: Math.max(0.4, Math.min(6.0, zoomLevel)) };
+    this.emit(false);
+  }
+
+  public setViewport(zoomLevel: number, panX: number, panY: number): void {
+    this.ui = {
+      ...this.ui,
+      zoomLevel: Math.max(0.4, Math.min(6.0, zoomLevel)),
+      panX,
+      panY
+    };
+    this.emit(false);
+  }
+
+  public resetViewport(): void {
+    this.ui = { ...this.ui, zoomLevel: 1.0, panX: 0, panY: 0 };
     this.emit(false);
   }
 
@@ -281,7 +307,7 @@ class AppStore {
   public switchWall(index: number): void {
     if (index < 0 || index >= this.project.walls.length) return;
     this.project = { ...this.project, currentWallIndex: index };
-    this.ui = { ...this.ui, selectedObstacleId: null, conflictsDismissed: false };
+    this.ui = { ...this.ui, selectedObstacleId: null, conflictsDismissed: false, zoomLevel: 1.0, panX: 0, panY: 0 };
     this.emit(false);
   }
 

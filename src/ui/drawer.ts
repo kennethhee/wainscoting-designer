@@ -99,7 +99,10 @@ export function initDrawer(drawerEl: HTMLElement): void {
         <button class="drawer-tab-btn" data-tab="materials" role="tab" type="button">Materials &amp; Cost</button>
         <button class="drawer-tab-btn" data-tab="project" role="tab" type="button">Project Totals</button>
       </div>
-      <div id="drawer-actions"></div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div id="drawer-actions"></div>
+        <button class="btn btn-sm" id="btn-toggle-drawer" type="button" title="Expand/collapse elevation view">Hide Drawer</button>
+      </div>
     </div>
     <div class="drawer-content" id="drawer-content"></div>
   `;
@@ -109,11 +112,19 @@ export function initDrawer(drawerEl: HTMLElement): void {
       store.setDrawerTab(btn.getAttribute('data-tab') as DrawerTab);
     });
   });
+
+  drawerEl.querySelector('#btn-toggle-drawer')?.addEventListener('click', () => {
+    store.toggleDrawer();
+  });
 }
 
 export function renderDrawer(drawerEl: HTMLElement, snap: ComputedSnapshot): void {
   const { project, activeWall, cuts, projectTotals, ui } = snap;
   const unit = project.unit;
+
+  drawerEl.classList.toggle('collapsed', ui.drawerCollapsed);
+  const toggleBtn = drawerEl.querySelector<HTMLButtonElement>('#btn-toggle-drawer');
+  if (toggleBtn) toggleBtn.textContent = ui.drawerCollapsed ? 'Show Drawer' : 'Hide Drawer';
 
   drawerEl.querySelectorAll<HTMLButtonElement>('.drawer-tab-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === ui.activeDrawerTab);
