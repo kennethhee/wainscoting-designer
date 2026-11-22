@@ -270,6 +270,27 @@ function renderObstacleSvg(obs: Obstacle, geo: WallGeometry, unit: Unit, isSelec
     `;
   }
 
+  if (/brush/i.test(obs.name)) {
+    const slotX = obs.x + obs.width * 0.2;
+    const slotY = svgY + obs.height * 0.3;
+    const slotW = obs.width * 0.6;
+    const slotH = obs.height * 0.4;
+    const bristleCount = 8;
+    let bristles = '';
+    for (let i = 1; i < bristleCount; i++) {
+      const bx = slotX + (slotW * i) / bristleCount;
+      bristles += `<line x1="${bx}" y1="${slotY}" x2="${bx}" y2="${slotY + slotH}" stroke="#64748b" stroke-width="2" />`;
+    }
+    return `
+      <g class="svg-obstacle" data-obs-id="${escHtml(obs.id)}" data-tooltip="${escHtml(tip)}">
+        <rect x="${obs.x}" y="${svgY}" width="${obs.width}" height="${obs.height}" fill="#f8fafc" fill-opacity="0.92" stroke="${strokeSel ?? '#38bdf8'}" stroke-width="${isSelected ? selStrokeW : 5}" stroke-dasharray="${isSelected ? 'none' : '12 6'}" rx="6" />
+        <rect x="${slotX}" y="${slotY}" width="${slotW}" height="${slotH}" fill="#1e293b" rx="3" />
+        ${bristles}
+        <line x1="${slotX}" y1="${slotY + slotH / 2}" x2="${slotX + slotW}" y2="${slotY + slotH / 2}" stroke="#94a3b8" stroke-width="2" />
+      </g>
+    `;
+  }
+
   return `
     <g class="svg-obstacle" data-obs-id="${escHtml(obs.id)}" data-tooltip="${escHtml(tip)}">
       <rect x="${obs.x}" y="${svgY}" width="${obs.width}" height="${obs.height}" fill="#ffffff" stroke="${strokeSel ?? '#dc2626'}" stroke-width="${isSelected ? selStrokeW : 4}" rx="6" />
@@ -481,7 +502,27 @@ export function renderElevation(container: HTMLElement, snap: ComputedSnapshot):
     }
   }
 
-  for (const obs of w.obstacles) {
+  // Render large openings & TVs first so recessed plates/brush plates behind TV remain visible & draggable
+  const sortedObstacles = [...w.obstacles].sort((a, b) => {
+    const rank = (t: Obstacle['type']) => (t === 'door' || t === 'window' ? 0 : t === 'tv' ? 1 : 2);
+    return rank(a.type) - rank(b.type);
+  });
+
+  // In-wall vertical cable-drop guide lines from brush plates to aligned lower outlets
+  for (const obs of sortedObstacles) {
+    if (!/brush/i.test(obs.name)) continue;
+    const obsCx = obs.x + obs.width / 2;
+    const matchLower = sortedObstacles.find(
+      (o) => o.id !== obs.id && o.type === 'outlet' && o.y < obs.y && Math.abs(o.x + o.width / 2 - obsCx) <= 50
+    );
+    if (matchLower) {
+      const topY = geo.wallHeight - obs.y;
+      const botY = geo.wallHeight - (matchLower.y + matchLower.height);
+      markup += `<line x1="${obsCx}" y1="${topY}" x2="${obsCx}" y2="${botY}" stroke="#38bdf8" stroke-width="5" stroke-dasharray="18 12" opacity="0.8" />`;
+    }
+  }
+
+  for (const obs of sortedObstacles) {
     markup += renderObstacleSvg(obs, geo, unit, ui.selectedObstacleId === obs.id, base.u);
   }
 

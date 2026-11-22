@@ -52,7 +52,7 @@ export interface ComputedSnapshot {
 
 type Listener = (snap: ComputedSnapshot) => void;
 
-const STORAGE_KEY_V2 = 'wainscot-studio-v2-feature';
+const STORAGE_KEY_V2 = 'wainscot-studio-v2-feature-brush';
 const THEME_KEY = 'wainscot-theme';
 const HISTORY_LIMIT = 100;
 

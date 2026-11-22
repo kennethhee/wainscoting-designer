@@ -285,6 +285,15 @@ export function createStarterProject(): Project {
               width: tv.widthMm,
               height: tv.heightMm
             },
+            {
+              id: 'obs-brush-tv',
+              name: 'Deta Brush Wall Plate (Behind TV)',
+              type: 'outlet',
+              x: 1435, // Vertically aligned with Bottom TV Outlet in same stud bay
+              y: 1180, // Lower third of TV, clear of UltraSlim mount above
+              width: 118,
+              height: 74
+            },
             { id: 'obs-switch', name: 'Left Light Switch', type: 'outlet', x: 120, y: 1240, width: 115, height: 75 },
             { id: 'obs-tv', name: 'Bottom TV Outlet', type: 'outlet', x: 1435, y: 230, width: 115, height: 75 },
             { id: 'obs-gpo', name: 'Bottom GPO', type: 'outlet', x: 1580, y: 230, width: 115, height: 75 }
